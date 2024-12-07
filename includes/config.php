@@ -1,9 +1,9 @@
 <?php
-// config.php
-
+// Configuración de la base de datos
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'nombre_de_tu_bd');
-define('DB_USER', 'tu_usuario');
-define('DB_PASS', 'tu_password');
+define('DB_USER', 'root'); // Cambiar si se usa otra cuenta
+define('DB_PASS', ''); // Contraseña del servidor MySQL
+define('DB_NAME', 'totclouddb');
 
-// Opcionalmente otras constantes globales
+
+?>

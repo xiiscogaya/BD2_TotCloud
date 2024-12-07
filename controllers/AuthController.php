@@ -1,42 +1,44 @@
 <?php
-// controllers/AuthController.php
+include_once '../includes/db_connect.php';
 
-class AuthController {
-    private $usuarioModel;
+class AuthController
+{
+    private $conn;
 
-    public function __construct($pdo) {
-        require_once __DIR__ . '/../models/Usuario.php';
-        $this->usuarioModel = new Usuario($pdo);
+    public function __construct()
+    {
+        global $conn;
+        $this->conn = $conn;
     }
 
-    public function loginUser($email, $password) {
-        $user = $this->usuarioModel->findByEmail($email);
-        if ($user && password_verify($password, $user['contrasena'])) {
-            // Iniciar sesión
-            $_SESSION['user_id'] = $user['id_usuario'];
-            $_SESSION['user_name'] = $user['nombre'];
-            return true;
+    public function login($username, $password)
+    {
+        $query = "SELECT * FROM usuario WHERE Usuario = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+            if (password_verify($password, $user['Contraseña'])) {
+                $_SESSION['user_id'] = $user['idUsuario'];
+                $_SESSION['username'] = $user['Usuario'];
+                return true;
+            }
         }
+
         return false;
     }
 
-    public function registerUser($data) {
-        // Podrías añadir más validaciones
-        if (empty($data['nombre']) || empty($data['email']) || empty($data['telefono']) || 
-            empty($data['direccion']) || empty($data['contrasena'])) {
-            return false;
-        }
+    public function register($username, $email, $password)
+    {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $query = "INSERT INTO usuario (Usuario, Email, Contraseña, FechaRegistro) VALUES (?, ?, ?, NOW())";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('sss', $username, $email, $hashed_password);
 
-        // Comprobar si el email ya existe
-        if ($this->usuarioModel->findByEmail($data['email'])) {
-            return false; // Ya existe
-        }
-
-        return $this->usuarioModel->createUser($data);
-    }
-
-    public function logoutUser() {
-        session_unset();
-        session_destroy();
+        return $stmt->execute();
     }
 }
+?>
