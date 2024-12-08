@@ -1,58 +1,52 @@
 <?php
 session_start();
-include_once '../includes/db_connect.php';
+include '../includes/db_connect.php'; // Conexión a la base de datos
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$error = ''; // Mensaje de error inicial
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Obtener datos del formulario
     $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
+    $password = $_POST['password'];
 
-    // Validación de entrada básica
-    if (empty($username) || empty($password)) {
-        $error = "Por favor, completa todos los campos.";
-    } else {
-        $query = "SELECT u.idUsuario, u.Usuario, u.Contraseña, g.idGrupo, g.Nombre AS grupo_nombre, 
-                         o.idOrganizacion, o.Nombre AS organizacion_nombre
-                  FROM usuario u
-                  INNER JOIN r_usuario_org ruo ON u.idUsuario = ruo.idUsuario
-                  INNER JOIN organizacion o ON ruo.idOrganizacion = o.idOrganizacion
-                  INNER JOIN r_org_grup rog ON o.idOrganizacion = rog.idOrganizacion
-                  INNER JOIN grupo g ON rog.idGrupo = g.idGrupo
-                  WHERE u.Usuario = ?";
+    // Consulta para buscar el usuario por nombre de usuario
+    $query = "SELECT * FROM usuario WHERE Usuario = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('s', $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-        $stmt = $conn->prepare($query);
-        if ($stmt) {
-            $stmt->bind_param('s', $username);
-            $stmt->execute();
-            $result = $stmt->get_result();
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
 
-            if ($result && $result->num_rows === 1) {
-                $user = $result->fetch_assoc();
-                if (password_verify($password, $user['Contraseña'])) {
-                    // Configurar variables de sesión
-                    session_regenerate_id(true);
-                    $_SESSION['user_id'] = $user['idUsuario'];
-                    $_SESSION['username'] = $user['Usuario'];
-                    $_SESSION['grupo_id'] = $user['idGrupo'];
-                    $_SESSION['grupo_nombre'] = $user['grupo_nombre'];
-                    $_SESSION['organizacion_id'] = $user['idOrganizacion'];
-                    $_SESSION['organizacion_nombre'] = $user['organizacion_nombre'];
+        // Verificar la contraseña con password_verify
+        if (password_verify($password, $user['Contraseña'])) {
+            // Iniciar sesión
+            $_SESSION['user_id'] = $user['idUsuario'];
+            $_SESSION['user_name'] = $user['Nombre'];
+            $_SESSION['username'] = $user['Usuario'];
 
-                    // Redirigir según el grupo del usuario
-                    if ($user['grupo_nombre'] === 'Administradores') {
-                        header("Location: admin_dashboard.php"); // Redirige a la página especial para administradores
-                    } else {
-                        header("Location: select_paas.php"); // Redirige al flujo normal
-                    }
-                    exit;
-                } else {
-                    $error = "Usuario o contraseña incorrectos.";
-                }
+            // Verificar si el usuario es trabajador
+            $worker_query = "SELECT * FROM trabajador WHERE idUsuario = ?";
+            $stmt_worker = $conn->prepare($worker_query);
+            $stmt_worker->bind_param('i', $user['idUsuario']);
+            $stmt_worker->execute();
+            $worker_result = $stmt_worker->get_result();
+
+            if ($worker_result->num_rows === 1) {
+                // Si es trabajador, redirigir al dashboard de trabajador
+                header('Location: trabajador/trabajador.php');
+                exit;
             } else {
-                $error = "Usuario o contraseña incorrectos.";
+                // Si es usuario normal, redirigir al dashboard de usuario
+                header('Location: usuario_dashboard.php');
+                exit;
             }
         } else {
-            die("Error al preparar la consulta: " . $conn->error);
+            $error = 'La contraseña es incorrecta.';
         }
+    } else {
+        $error = 'El usuario no existe.';
     }
 }
 ?>
@@ -63,37 +57,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - TotCloud</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Archivo de estilos personalizados -->
+    <link href="css/estilos.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Encabezado -->
     <?php include '../includes/header.php'; ?>
 
+    <!-- Contenido principal -->
     <main class="container my-5">
         <h2 class="text-center">Iniciar Sesión</h2>
 
-        <form method="POST" class="mx-auto" style="max-width: 400px;">
-            <?php if (!empty($error)): ?>
-                <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
-            <?php endif; ?>
+        <!-- Mostrar error si existe -->
+        <?php if ($error): ?>
+        <div class="alert alert-danger text-center">
+            <?php echo htmlspecialchars($error); ?>
+        </div>
+        <?php endif; ?>
 
+        <!-- Formulario de inicio de sesión -->
+        <form method="POST" action="login.php" class="mx-auto" style="max-width: 400px;">
             <div class="mb-3">
                 <label for="username" class="form-label">Usuario</label>
                 <input type="text" class="form-control" id="username" name="username" required>
             </div>
-
             <div class="mb-3">
                 <label for="password" class="form-label">Contraseña</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
-
             <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
         </form>
     </main>
 
+    <!-- Pie de página -->
     <?php include '../includes/footer.php'; ?>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

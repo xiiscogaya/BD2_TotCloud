@@ -1,64 +1,78 @@
-<?php
-session_start();
-?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido a TotCloud</title>
+    <title>TotCloud - Gestión de Servicios en la Nube</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Archivo de estilos personalizados -->
+    <link href="css/estilos.css" rel="stylesheet">
     <style>
-        .hero, .profile {
-            text-align: center;
-            padding: 50px 20px;
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
         }
-        .hero img {
-            max-width: 150px;
-            margin-bottom: 20px;
+
+        main {
+            flex: 1;
+        }
+
+        footer {
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .hero {
+            background-image: url('img/totcloud.jpg'); /* Cambia esta URL por la imagen de TotCloud */
+            background-size: cover;
+            background-position: center;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
         }
     </style>
 </head>
 <body>
-    <!-- Incluye el header -->
+    <!-- Encabezado -->
     <?php include '../includes/header.php'; ?>
 
     <!-- Contenido principal -->
-    <main class="container my-5">
-        <!-- Mostrar mensaje de éxito si existe -->
-        <?php if (isset($_SESSION['success_message'])): ?>
-            <div class="alert alert-success text-center">
-                <?php
-                echo htmlspecialchars($_SESSION['success_message']);
-                unset($_SESSION['success_message']); // Elimina el mensaje después de mostrarlo
-                ?>
+    <main>
+        <!-- Sección de bienvenida con la imagen de la empresa -->
+        <div class="hero">
+            <div class="text-center">
+                <h1>Bienvenido a TotCloud</h1>
+                <p>Tu solución en la nube para servicios PaaS y SaaS</p>
             </div>
-        <?php endif; ?>
+        </div>
 
-        <!-- Mostrar contenido según el estado de la sesión -->
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <!-- Perfil del usuario -->
-            <div class="profile">
-                <h2 class="mt-3">Perfil del Usuario</h2>
-                <p class="lead">Información de tu cuenta</p>
-                <p><strong>Nombre de Usuario:</strong> <?php echo htmlspecialchars($_SESSION['username']); ?></p>
-                <p><strong>Organización:</strong> <?php echo htmlspecialchars($_SESSION['organizacion_nombre']); ?></p>
-                <p><strong>Grupo:</strong> <?php echo htmlspecialchars($_SESSION['grupo_nombre']); ?></p>
-            </div>
-        <?php else: ?>
-            <!-- Hero Section -->
-            <div class="hero">
-                <img src="https://via.placeholder.com/150" alt="Logo TotCloud" class="img-fluid">
-                <h2 class="mt-3">Bienvenido a TotCloud</h2>
-                <p class="lead">Tu solución en gestión de servicios PaaS y SaaS.</p>
-                <p>Descubre cómo TotCloud puede optimizar tus procesos, brindarte infraestructura como servicio (PaaS) y software como servicio (SaaS), todo en un solo lugar.</p>
-            </div>
-        <?php endif; ?>
+        <!-- Descripción de la empresa -->
+        <section class="container my-5">
+            <h2 class="text-center">¿Quiénes somos?</h2>
+            <p class="lead text-center">
+                TotCloud es una empresa líder en servicios de infraestructura como servicio (PaaS) y software como servicio (SaaS). 
+                Nuestra misión es proporcionar herramientas escalables y eficientes para organizaciones de todos los tamaños, facilitando 
+                la gestión de recursos en la nube de forma segura y accesible.
+            </p>
+        </section>
     </main>
 
-    <!-- Incluye el footer -->
+    <!-- Pie de página -->
     <?php include '../includes/footer.php'; ?>
 
     <!-- Bootstrap JS -->
