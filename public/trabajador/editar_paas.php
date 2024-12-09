@@ -29,16 +29,24 @@ if (!$paas) {
     exit;
 }
 
+// Obtener la IP asociada a esta configuración PaaS
+$query_ip = "SELECT idIp FROM direccionip WHERE idPaaS = ?";
+$stmt_ip = $conn->prepare($query_ip);
+$stmt_ip->bind_param('i', $idPaaS);
+$stmt_ip->execute();
+$result_ip = $stmt_ip->get_result();
+$current_ip = $result_ip->fetch_assoc()['idIp'] ?? null;
+
 // Obtener componentes asociados
-$cpus_seleccionadas = $conn->query("SELECT * FROM r_paas_cpu WHERE idPaaS = $idPaaS");
-$rams_seleccionadas = $conn->query("SELECT * FROM r_paas_ram WHERE idPaaS = $idPaaS");
-$almacenamientos_seleccionados = $conn->query("SELECT * FROM r_paas_almacenamiento WHERE idPaaS = $idPaaS");
+$cpus_seleccionadas = $conn->query("SELECT * FROM r_paas_cpu WHERE idPaaS = $idPaaS")->fetch_all(MYSQLI_ASSOC);
+$rams_seleccionadas = $conn->query("SELECT * FROM r_paas_ram WHERE idPaaS = $idPaaS")->fetch_all(MYSQLI_ASSOC);
+$almacenamientos_seleccionados = $conn->query("SELECT * FROM r_paas_almacenamiento WHERE idPaaS = $idPaaS")->fetch_all(MYSQLI_ASSOC);
 
 // Obtener las opciones disponibles
 $cpus = $conn->query("SELECT * FROM cpu");
 $rams = $conn->query("SELECT * FROM ram");
 $almacenamientos = $conn->query("SELECT * FROM almacenamiento");
-$ips = $conn->query("SELECT * FROM direccionip WHERE idPaaS IS NULL OR idPaaS = $idPaaS"); // IP actual o libres
+$ips = $conn->query("SELECT * FROM direccionip WHERE idPaaS IS NULL OR idPaaS = $idPaaS");
 $sos = $conn->query("SELECT * FROM sistemaoperativo");
 
 // Manejar el envío del formulario
@@ -71,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->query("UPDATE direccionip SET idPaaS = $idPaaS WHERE idIp = $idIp");
 
             // Insertar componentes seleccionados
-            $insert_component = function($table, $idPaaS, $component_column, $component_id, $cantidad) use ($conn) {
+            $insert_component = function ($table, $idPaaS, $component_column, $component_id, $cantidad) use ($conn) {
                 $query = "INSERT INTO $table (idPaaS, $component_column, Cantidad) VALUES (?, ?, ?)";
                 $stmt = $conn->prepare($query);
                 $stmt->bind_param('iii', $idPaaS, $component_id, $cantidad);
@@ -97,7 +105,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $message = 'Configuración PaaS actualizada exitosamente.';
+            // Guardar mensaje en sesión
+            $_SESSION['success_message'] = 'La configuración PaaS se ha actualizado correctamente.';
+
+
+            // Redirigir a modificar_paas.php
+            header('Location: modificar_paas.php');
+            exit;
         } else {
             $message = 'Error al actualizar la configuración PaaS.';
         }
@@ -114,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+    
     <header class="bg-primary text-white text-center py-3">
         <h1>Editar Configuración PaaS</h1>
     </header>
@@ -145,14 +160,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </select>
             </div>
             <div class="mb-3">
+                <label class="form-label">Seleccionar IP</label>
+                <select class="form-select" name="idIp" required>
+                    <option value="">Selecciona una IP</option>
+                    <?php while ($row = $ips->fetch_assoc()): ?>
+                        <option value="<?php echo $row['idIp']; ?>" <?php echo $row['idIp'] == $current_ip ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($row['Direccion']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Seleccionar CPUs</label>
                 <?php while ($row = $cpus->fetch_assoc()): ?>
                     <div class="d-flex align-items-center mb-2">
                         <input type="checkbox" name="cpus[]" value="<?php echo $row['idCPU']; ?>" 
-                               <?php echo in_array($row['idCPU'], array_column($cpus_seleccionadas->fetch_all(MYSQLI_ASSOC), 'idCPU')) ? 'checked' : ''; ?>>
+                               <?php echo in_array($row['idCPU'], array_column($cpus_seleccionadas, 'idCPU')) ? 'checked' : ''; ?>>
                         <span class="ms-2"><?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Nucleos'] . ' núcleos a ' . $row['Frecuencia'] . 'GHz'); ?></span>
                         <input type="number" name="cantidad_cpu_<?php echo $row['idCPU']; ?>" min="1" max="<?php echo $row['Cantidad']; ?>" 
-                               value="<?php echo $row['Cantidad']; ?>" class="form-control ms-3" style="max-width: 100px;">
+                               value="<?php
+                               $selected_cpu = array_filter($cpus_seleccionadas, function ($cpu) use ($row) {
+                                   return $cpu['idCPU'] == $row['idCPU'];
+                               });
+                               echo $selected_cpu ? reset($selected_cpu)['Cantidad'] : '';
+                               ?>" class="form-control ms-3" style="max-width: 100px;">
                     </div>
                 <?php endwhile; ?>
             </div>
@@ -161,22 +193,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php while ($row = $rams->fetch_assoc()): ?>
                     <div class="d-flex align-items-center mb-2">
                         <input type="checkbox" name="rams[]" value="<?php echo $row['idRAM']; ?>" 
-                            <?php echo in_array($row['idRAM'], array_column($rams_seleccionadas->fetch_all(MYSQLI_ASSOC), 'idRAM')) ? 'checked' : ''; ?>>
+                               <?php echo in_array($row['idRAM'], array_column($rams_seleccionadas, 'idRAM')) ? 'checked' : ''; ?>>
                         <span class="ms-2">
                             <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB a ' . $row['Frecuencia'] . 'MHz (Tipo: ' . $row['Tipo'] . ')'); ?>
                         </span>
-                        <input type="number" 
-                            name="cantidad_ram_<?php echo $row['idRAM']; ?>" 
-                            min="1" 
-                            max="<?php echo $row['Cantidad']; ?>" 
-                            value="<?php 
-                                $cantidad_ram = array_filter($rams_seleccionadas->fetch_all(MYSQLI_ASSOC), function($selected) use ($row) {
-                                    return $selected['idRAM'] == $row['idRAM'];
-                                });
-                                echo $cantidad_ram ? reset($cantidad_ram)['Cantidad'] : '';
-                            ?>" 
-                            class="form-control ms-3" 
-                            style="max-width: 100px;">
+                        <input type="number" name="cantidad_ram_<?php echo $row['idRAM']; ?>" min="1" max="<?php echo $row['Cantidad']; ?>" 
+                               value="<?php
+                               $selected_ram = array_filter($rams_seleccionadas, function ($ram) use ($row) {
+                                   return $ram['idRAM'] == $row['idRAM'];
+                               });
+                               echo $selected_ram ? reset($selected_ram)['Cantidad'] : '';
+                               ?>" class="form-control ms-3" style="max-width: 100px;">
                     </div>
                 <?php endwhile; ?>
             </div>
@@ -185,37 +212,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php while ($row = $almacenamientos->fetch_assoc()): ?>
                     <div class="d-flex align-items-center mb-2">
                         <input type="checkbox" name="almacenamientos[]" value="<?php echo $row['idAlmacenamiento']; ?>" 
-                            <?php echo in_array($row['idAlmacenamiento'], array_column($almacenamientos_seleccionados->fetch_all(MYSQLI_ASSOC), 'idAlmacenamiento')) ? 'checked' : ''; ?>>
+                               <?php echo in_array($row['idAlmacenamiento'], array_column($almacenamientos_seleccionados, 'idAlmacenamiento')) ? 'checked' : ''; ?>>
                         <span class="ms-2">
                             <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB (' . $row['Tipo'] . ', Lectura: ' . $row['VelocidadLectura'] . 'MB/s, Escritura: ' . $row['VelocidadEscritura'] . 'MB/s)'); ?>
                         </span>
-                        <input type="number" 
-                            name="cantidad_almacenamiento_<?php echo $row['idAlmacenamiento']; ?>" 
-                            min="1" 
-                            max="<?php echo $row['Cantidad']; ?>" 
-                            value="<?php 
-                                $cantidad_almacenamiento = array_filter($almacenamientos_seleccionados->fetch_all(MYSQLI_ASSOC), function($selected) use ($row) {
-                                    return $selected['idAlmacenamiento'] == $row['idAlmacenamiento'];
-                                });
-                                echo $cantidad_almacenamiento ? reset($cantidad_almacenamiento)['Cantidad'] : '';
-                            ?>" 
-                            class="form-control ms-3" 
-                            style="max-width: 100px;">
+                        <input type="number" name="cantidad_almacenamiento_<?php echo $row['idAlmacenamiento']; ?>" min="1" max="<?php echo $row['Cantidad']; ?>" 
+                               value="<?php
+                               $selected_almacenamiento = array_filter($almacenamientos_seleccionados, function ($almacenamiento) use ($row) {
+                                   return $almacenamiento['idAlmacenamiento'] == $row['idAlmacenamiento'];
+                               });
+                               echo $selected_almacenamiento ? reset($selected_almacenamiento)['Cantidad'] : '';
+                               ?>" class="form-control ms-3" style="max-width: 100px;">
                     </div>
                 <?php endwhile; ?>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Seleccionar IP</label>
-                <select class="form-select" name="idIp" required>
-                    <option value="">Selecciona una IP</option>
-                    <?php while ($row = $ips->fetch_assoc()): ?>
-                        <option value="<?php echo $row['idIp']; ?>" 
-                                <?php echo $row['idIp'] == $paas['idPaaS'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($row['Direccion']); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
+
 
             <button type="submit" class="btn btn-primary w-100">Actualizar Configuración</button>
         </form>
