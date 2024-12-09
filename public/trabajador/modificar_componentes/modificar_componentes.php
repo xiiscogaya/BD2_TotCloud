@@ -80,7 +80,7 @@ if ($worker_result->num_rows === 0) {
                     <div class="card-body text-center">
                         <h5 class="card-title">Modificar Almacenamientos</h5>
                         <p class="card-text">Gestiona las unidades de almacenamiento disponibles.</p>
-                        <a href="modificar_almacenamiento.php" class="btn btn-primary">Modificar Almacenamientos</a>
+                        <a href="almacenamiento/modificar_almacenamiento.php" class="btn btn-primary">Modificar Almacenamientos</a>
                     </div>
                 </div>
             </div>
@@ -89,7 +89,7 @@ if ($worker_result->num_rows === 0) {
                     <div class="card-body text-center">
                         <h5 class="card-title">Modificar IPs</h5>
                         <p class="card-text">Gestiona las direcciones IP asignadas o disponibles.</p>
-                        <a href="modificar_ips.php" class="btn btn-primary">Modificar IPs</a>
+                        <a href="ip/modificar_ips.php" class="btn btn-primary">Modificar IPs</a>
                     </div>
                 </div>
             </div>

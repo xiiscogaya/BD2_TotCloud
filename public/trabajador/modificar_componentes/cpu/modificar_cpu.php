@@ -83,11 +83,11 @@ $cpus_result = $conn->query($cpus_query);
             </div>
         <?php endif; ?>
 
+        <h2 class="text-center mb-4">Lista de CPUs</h2>
+
         <div class="container my-3">
             <a href="../modificar_componentes.php" class="btn btn-secondary">Volver</a>
         </div>
-
-        <h2 class="text-center mb-4">Lista de CPUs</h2>
 
         <!-- Tabla de CPUs -->
         <div class="mb-3 text-end">
@@ -115,7 +115,7 @@ $cpus_result = $conn->query($cpus_query);
                             <td><?php echo htmlspecialchars($cpu['Frecuencia']); ?></td>
                             <td><?php echo htmlspecialchars($cpu['Cantidad']); ?></td>
                             <td>
-                                <a href="editar_cpu.php?id=<?php echo $cpu['idCPU']; ?>" class="btn btn-primary btn-sm">Editar</a>
+                                <a href="editar_cpu.php?id=<?php echo $cpu['idCPU']; ?>" class="btn btn-warning btn-sm">Editar</a>
                                 <a href="modificar_cpu.php?eliminar=<?php echo $cpu['idCPU']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta CPU?')">Eliminar</a>
                             </td>
                         </tr>
