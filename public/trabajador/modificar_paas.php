@@ -7,12 +7,28 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php');
     exit;
 }
-// Mostrar mensaje de éxito si existe
+
+// Mostrar mensaje de éxito al crear paas
+$success_message_crear = '';
+if (isset($_SESSION['success_message_crear'])) {
+    $success_message = $_SESSION['success_message_crear'];
+    unset($_SESSION['success_message_crear']); // Eliminar mensaje para evitar que se muestre de nuevo
+}
+
+// Mostrar mensaje de éxito al editar paas si existe
 $success_message = '';
 if (isset($_SESSION['success_message'])) {
     $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']); // Eliminar mensaje para evitar que se muestre de nuevo
 }
+// Mostrar mensaje de éxito al eliminar el paas si existe
+$error_message = '';
+if (isset($_SESSION['error_message'])) {
+    $error_message = $_SESSION['error_message'];
+    unset($_SESSION['error_message']); // Eliminar el mensaje después de mostrarlo
+}
+
+
 
 // Obtener todas las configuraciones PaaS
 $query = "SELECT * FROM paas";
@@ -66,6 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
         <a href="trabajador.php" class="btn btn-secondary">Volver</a>
     </div>
 
+    <!-- Mostrar mensaje de exito al crear paas -->
+    <?php if (!empty($success_message_crear)): ?>
+        <div class="alert alert-success text-center">
+            <?php echo htmlspecialchars($success_message_crear); ?>
+        </div>
+    <?php endif; ?>
+
     <!-- Mostrar mensaje de cambios realizados -->
     <?php if (!empty($success_message)): ?>
         <div class="alert alert-success text-center">
@@ -73,6 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
         </div>
     <?php endif; ?>
 
+    <!-- Mostrar mensaje de éxito al eliminar paas -->
+    <?php if (!empty($error_message)): ?>
+        <div class="alert alert-danger text-center">
+            <?php echo htmlspecialchars($error_message); ?>
+        </div>
+    <?php endif; ?>
 
     <!-- Contenido principal -->
     <main class="container my-5">
