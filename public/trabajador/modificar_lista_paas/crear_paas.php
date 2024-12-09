@@ -1,10 +1,10 @@
 <?php
 session_start();
-include '../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../../includes/db_connect.php'; // Conexión a la base de datos
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+    header('Location: ../../login.php');
     exit;
 }
 
@@ -53,19 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt_ip->bind_param('ii', $idPaaS, $idIp);
                 $stmt_ip->execute();
 
-                // Insertar componentes seleccionados
-                $insert_component = function($table, $idPaaS, $component_column, $component_id, $cantidad) use ($conn) {
+                // Insertar componentes seleccionados y actualizar cantidades disponibles
+                $insert_component = function($table, $idPaaS, $component_column, $component_id, $cantidad, $update_table) use ($conn) {
+                    // Insertar en la tabla de relación
                     $query = "INSERT INTO $table (idPaaS, $component_column, Cantidad) VALUES (?, ?, ?)";
                     $stmt = $conn->prepare($query);
                     $stmt->bind_param('iii', $idPaaS, $component_id, $cantidad);
                     $stmt->execute();
+
+                    // Restar la cantidad en la tabla principal
+                    $update_query = "UPDATE $update_table SET Cantidad = Cantidad - ? WHERE $component_column = ?";
+                    $stmt_update = $conn->prepare($update_query);
+                    $stmt_update->bind_param('ii', $cantidad, $component_id);
+                    $stmt_update->execute();
                 };
 
                 // Insertar CPUs seleccionadas
                 foreach ($cpus as $cpu) {
                     if (!empty($_POST["cantidad_cpu_$cpu"])) {
                         $cantidad = intval($_POST["cantidad_cpu_$cpu"]);
-                        $insert_component('R_PaaS_CPU', $idPaaS, 'idCPU', $cpu, $cantidad);
+                        $insert_component('R_PaaS_CPU', $idPaaS, 'idCPU', $cpu, $cantidad, 'cpu');
                     }
                 }
 
@@ -73,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 foreach ($rams as $ram) {
                     if (!empty($_POST["cantidad_ram_$ram"])) {
                         $cantidad = intval($_POST["cantidad_ram_$ram"]);
-                        $insert_component('R_PaaS_RAM', $idPaaS, 'idRAM', $ram, $cantidad);
+                        $insert_component('R_PaaS_RAM', $idPaaS, 'idRAM', $ram, $cantidad, 'ram');
                     }
                 }
 
@@ -81,11 +88,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 foreach ($almacenamientos as $almacenamiento) {
                     if (!empty($_POST["cantidad_almacenamiento_$almacenamiento"])) {
                         $cantidad = intval($_POST["cantidad_almacenamiento_$almacenamiento"]);
-                        $insert_component('R_PaaS_Almacenamiento', $idPaaS, 'idAlmacenamiento', $almacenamiento, $cantidad);
+                        $insert_component('R_PaaS_Almacenamiento', $idPaaS, 'idAlmacenamiento', $almacenamiento, $cantidad, 'almacenamiento');
                     }
                 }
 
-                $message = 'Configuración PaaS creada exitosamente.';
+                // Guardar mensaje en sesión
+                $_SESSION['success_message_crear'] = 'Configuración PaaS creada exitosamente.';
+
+                // Redirigir a modificar_paas.php
+                header('Location: modificar_paas.php');
             } else {
                 $message = 'Error al crear la configuración PaaS.';
             }
@@ -94,12 +105,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Obtener datos de componentes
-$cpus = $conn->query("SELECT * FROM cpu");
-$rams = $conn->query("SELECT * FROM ram");
-$almacenamientos = $conn->query("SELECT * FROM almacenamiento");
+$cpus = $conn->query("SELECT * FROM cpu WHERE Cantidad > 0");
+$rams = $conn->query("SELECT * FROM ram WHERE Cantidad > 0");
+$almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0");
 $ips = $conn->query("SELECT * FROM direccionip WHERE idPaaS IS NULL"); // Solo IPs no asociadas
 $sos = $conn->query("SELECT * FROM sistemaoperativo");
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -109,7 +121,7 @@ $sos = $conn->query("SELECT * FROM sistemaoperativo");
     <title>Crear PaaS - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Archivo de estilos personalizados -->
-    <link href="css/estilos.css" rel="stylesheet">
+    <link href="../../css/estilos.css" rel="stylesheet">
 </head>
 <body>
     <header class="bg-primary text-white text-center py-3">

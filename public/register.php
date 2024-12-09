@@ -36,13 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($result->num_rows > 0) {
             $error = 'El nombre de usuario o el correo electrónico ya están registrados.';
         } else {
+            // Obtener el próximo ID disponible para el usuario
+            $query_next_id = "SELECT COALESCE(MAX(idUsuario), 0) + 1 AS next_id FROM usuario";
+            $result_next_id = $conn->query($query_next_id);
+            $next_id = $result_next_id->fetch_assoc()['next_id'];
+
             // Hash de la contraseña
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
             // Insertar el nuevo usuario en la base de datos
-            $insert_query = "INSERT INTO usuario (Nombre, Usuario, Email, Telefono, Contraseña, Direccion) VALUES (?, ?, ?, ?, ?, ?)";
+            $insert_query = "INSERT INTO usuario (idUsuario, Nombre, Usuario, Email, Telefono, Contraseña, Direccion) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_query);
-            $stmt->bind_param('ssssss', $name, $username, $email, $phone, $hashed_password, $address);
+            $stmt->bind_param('issssss', $next_id, $name, $username, $email, $phone, $hashed_password, $address);
 
             if ($stmt->execute()) {
                 // Redirigir al inicio de sesión después del registro exitoso

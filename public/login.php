@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 exit;
             } else {
                 // Si es usuario normal, redirigir al dashboard de usuario
-                header('Location: usuario_dashboard.php');
+                header('Location: usuario/usuario.php');
                 exit;
             }
         } else {
