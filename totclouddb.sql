@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 08-12-2024 a las 20:57:35
+-- Tiempo de generación: 09-12-2024 a las 12:17:53
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -35,7 +35,6 @@ CREATE TABLE `almacenamiento` (
   `VelocidadEscritura` decimal(10,2) NOT NULL,
   `Capacidad` decimal(10,2) NOT NULL,
   `PrecioH` decimal(10,2) NOT NULL,
-  `Estado` varchar(50) NOT NULL,
   `Cantidad` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -43,11 +42,11 @@ CREATE TABLE `almacenamiento` (
 -- Volcado de datos para la tabla `almacenamiento`
 --
 
-INSERT INTO `almacenamiento` (`idAlmacenamiento`, `Nombre`, `Tipo`, `VelocidadLectura`, `VelocidadEscritura`, `Capacidad`, `PrecioH`, `Estado`, `Cantidad`) VALUES
-(1, 'Samsung 970 EVO Plus', 'SSD', 3500.00, 3300.00, 1000.00, 0.20, 'Activo', 25),
-(2, 'Seagate Barracuda', 'HDD', 150.00, 140.00, 2000.00, 0.10, 'Activo', 50),
-(3, 'Western Digital Blue SN570', 'NVMe', 3500.00, 3000.00, 512.00, 0.25, 'En prueba', 15),
-(4, 'Kingston A400', 'SATA', 500.00, 450.00, 256.00, 0.05, 'Activo', 40);
+INSERT INTO `almacenamiento` (`idAlmacenamiento`, `Nombre`, `Tipo`, `VelocidadLectura`, `VelocidadEscritura`, `Capacidad`, `PrecioH`, `Cantidad`) VALUES
+(1, 'Samsung 970 EVO Plus', 'SSD', 3500.00, 3300.00, 1000.00, 0.20, 25),
+(2, 'Seagate Barracuda', 'HDD', 150.00, 140.00, 2000.00, 0.10, 50),
+(3, 'Western Digital Blue SN570', 'NVMe', 3500.00, 3000.00, 512.00, 0.25, 15),
+(4, 'Kingston A400', 'SATA', 500.00, 450.00, 256.00, 0.05, 40);
 
 -- --------------------------------------------------------
 
@@ -102,7 +101,6 @@ CREATE TABLE `direccionip` (
   `idIp` int(11) NOT NULL,
   `Direccion` varchar(45) NOT NULL,
   `PrecioH` decimal(10,2) NOT NULL,
-  `Estado` varchar(50) NOT NULL,
   `idPaaS` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -110,11 +108,11 @@ CREATE TABLE `direccionip` (
 -- Volcado de datos para la tabla `direccionip`
 --
 
-INSERT INTO `direccionip` (`idIp`, `Direccion`, `PrecioH`, `Estado`, `idPaaS`) VALUES
-(1, '192.168.1.1', 0.05, 'Reservada', NULL),
-(2, '192.168.1.2', 0.05, 'Disponible', NULL),
-(3, '192.168.1.3', 0.05, 'En uso', NULL),
-(4, '192.168.1.4', 0.05, 'Reservada', NULL);
+INSERT INTO `direccionip` (`idIp`, `Direccion`, `PrecioH`, `idPaaS`) VALUES
+(1, '192.168.1.1', 0.05, NULL),
+(2, '192.168.1.2', 0.05, 1),
+(3, '192.168.1.3', 0.05, NULL),
+(4, '192.168.1.4', 0.05, NULL);
 
 -- --------------------------------------------------------
 
@@ -184,6 +182,13 @@ CREATE TABLE `paas` (
   `idSO` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `paas`
+--
+
+INSERT INTO `paas` (`idPaaS`, `Nombre`, `Estado`, `idSO`) VALUES
+(1, 'Confi1', 'Activo', 2);
+
 -- --------------------------------------------------------
 
 --
@@ -210,7 +215,6 @@ CREATE TABLE `ram` (
   `Capacidad` decimal(10,2) NOT NULL,
   `Tipo` varchar(50) NOT NULL,
   `PrecioH` decimal(10,2) NOT NULL,
-  `Estado` varchar(50) NOT NULL,
   `Cantidad` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -218,11 +222,11 @@ CREATE TABLE `ram` (
 -- Volcado de datos para la tabla `ram`
 --
 
-INSERT INTO `ram` (`idRAM`, `Nombre`, `Fabricante`, `Frecuencia`, `Capacidad`, `Tipo`, `PrecioH`, `Estado`, `Cantidad`) VALUES
-(1, 'Kingston DDR4', 'Kingston', 3200.00, 16.00, 'DDR4', 0.10, 'Activo', 50),
-(2, 'Corsair Vengeance LPX', 'Corsair', 3600.00, 32.00, 'DDR4', 0.15, 'Activo', 30),
-(3, 'HyperX Fury DDR5', 'HyperX', 4800.00, 16.00, 'DDR5', 0.20, 'Activo', 20),
-(4, 'G.Skill Trident Z', 'G.Skill', 3200.00, 64.00, 'DDR4', 0.25, 'En prueba', 10);
+INSERT INTO `ram` (`idRAM`, `Nombre`, `Fabricante`, `Frecuencia`, `Capacidad`, `Tipo`, `PrecioH`, `Cantidad`) VALUES
+(1, 'Kingston DDR4', 'Kingston', 3200.00, 16.00, 'DDR4', 0.10, 50),
+(2, 'Corsair Vengeance LPX', 'Corsair', 3600.00, 32.00, 'DDR4', 0.15, 30),
+(3, 'HyperX Fury DDR5', 'HyperX', 4800.00, 16.00, 'DDR5', 0.20, 20),
+(4, 'G.Skill Trident Z', 'G.Skill', 3200.00, 64.00, 'DDR4', 0.25, 10);
 
 -- --------------------------------------------------------
 
@@ -238,6 +242,44 @@ CREATE TABLE `r_grup_priv` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `r_paas_almacenamiento`
+--
+
+CREATE TABLE `r_paas_almacenamiento` (
+  `idPaaS` int(11) NOT NULL,
+  `idAlmacenamiento` int(11) NOT NULL,
+  `Cantidad` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_paas_almacenamiento`
+--
+
+INSERT INTO `r_paas_almacenamiento` (`idPaaS`, `idAlmacenamiento`, `Cantidad`) VALUES
+(1, 2, 2);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `r_paas_cpu`
+--
+
+CREATE TABLE `r_paas_cpu` (
+  `idPaaS` int(11) NOT NULL,
+  `idCPU` int(11) NOT NULL,
+  `Cantidad` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_paas_cpu`
+--
+
+INSERT INTO `r_paas_cpu` (`idPaaS`, `idCPU`, `Cantidad`) VALUES
+(1, 1, 2);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `r_paas_grup`
 --
 
@@ -245,6 +287,25 @@ CREATE TABLE `r_paas_grup` (
   `idPaaS` int(11) NOT NULL,
   `idGrup` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `r_paas_ram`
+--
+
+CREATE TABLE `r_paas_ram` (
+  `idPaaS` int(11) NOT NULL,
+  `idRAM` int(11) NOT NULL,
+  `Cantidad` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_paas_ram`
+--
+
+INSERT INTO `r_paas_ram` (`idPaaS`, `idRAM`, `Cantidad`) VALUES
+(1, 1, 2);
 
 -- --------------------------------------------------------
 
@@ -439,11 +500,32 @@ ALTER TABLE `r_grup_priv`
   ADD KEY `idPriv` (`idPriv`);
 
 --
+-- Indices de la tabla `r_paas_almacenamiento`
+--
+ALTER TABLE `r_paas_almacenamiento`
+  ADD PRIMARY KEY (`idPaaS`,`idAlmacenamiento`),
+  ADD KEY `idAlmacenamiento` (`idAlmacenamiento`);
+
+--
+-- Indices de la tabla `r_paas_cpu`
+--
+ALTER TABLE `r_paas_cpu`
+  ADD PRIMARY KEY (`idPaaS`,`idCPU`),
+  ADD KEY `idCPU` (`idCPU`);
+
+--
 -- Indices de la tabla `r_paas_grup`
 --
 ALTER TABLE `r_paas_grup`
   ADD PRIMARY KEY (`idPaaS`,`idGrup`),
   ADD KEY `idGrup` (`idGrup`);
+
+--
+-- Indices de la tabla `r_paas_ram`
+--
+ALTER TABLE `r_paas_ram`
+  ADD PRIMARY KEY (`idPaaS`,`idRAM`),
+  ADD KEY `idRAM` (`idRAM`);
 
 --
 -- Indices de la tabla `r_saas_grup`
@@ -537,11 +619,32 @@ ALTER TABLE `r_grup_priv`
   ADD CONSTRAINT `r_grup_priv_ibfk_2` FOREIGN KEY (`idPriv`) REFERENCES `privilegio` (`idPrivilegio`);
 
 --
+-- Filtros para la tabla `r_paas_almacenamiento`
+--
+ALTER TABLE `r_paas_almacenamiento`
+  ADD CONSTRAINT `r_paas_almacenamiento_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_paas_almacenamiento_ibfk_2` FOREIGN KEY (`idAlmacenamiento`) REFERENCES `almacenamiento` (`idAlmacenamiento`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `r_paas_cpu`
+--
+ALTER TABLE `r_paas_cpu`
+  ADD CONSTRAINT `r_paas_cpu_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_paas_cpu_ibfk_2` FOREIGN KEY (`idCPU`) REFERENCES `cpu` (`idCPU`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `r_paas_grup`
 --
 ALTER TABLE `r_paas_grup`
   ADD CONSTRAINT `r_paas_grup_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
   ADD CONSTRAINT `r_paas_grup_ibfk_2` FOREIGN KEY (`idGrup`) REFERENCES `grupo` (`idGrupo`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `r_paas_ram`
+--
+ALTER TABLE `r_paas_ram`
+  ADD CONSTRAINT `r_paas_ram_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_paas_ram_ibfk_2` FOREIGN KEY (`idRAM`) REFERENCES `ram` (`idRAM`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `r_saas_grup`
