@@ -1,10 +1,10 @@
 <?php
 session_start();
-include '../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../../includes/db_connect.php'; // Conexión a la base de datos
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+    header('Location: ../../login.php');
     exit;
 }
 
@@ -26,7 +26,7 @@ $worker_result = $stmt_worker->get_result();
 
 if ($worker_result->num_rows === 0) {
     // Si no es trabajador, redirigir a la página de usuario
-    header('Location: ../usuario/usuario_dashboard.php');
+    header('Location: ../../usuario/usuario.php');
     exit;
 }
 ?>
@@ -36,66 +36,72 @@ if ($worker_result->num_rows === 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Trabajador - TotCloud</title>
+    <title>Modificar Componentes - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Archivo de estilos personalizados -->
-    <link href="../css/estilos.css" rel="stylesheet">
+    <link href="../../css/estilos.css" rel="stylesheet">
 </head>
 <body>
     <!-- Encabezado -->
     <header class="bg-primary text-white d-flex justify-content-between align-items-center p-3">
         <div>
-            <h1 class="h3 mb-0">Panel de Trabajador</h1>
+            <h1 class="h3 mb-0">Modificar Componentes</h1>
             <p class="mb-0">Bienvenido, <?php echo htmlspecialchars($user['Nombre']); ?> (Trabajador)</p>
         </div>
         <div>
-            <a href="../logout.php" class="btn btn-outline-light">Cerrar Sesión</a>
+            <a href="../../logout.php" class="btn btn-outline-light">Cerrar Sesión</a>
         </div>
     </header>
 
-    <!-- Opciones de Trabajador -->
+    <!-- Opciones de Componentes -->
     <main class="container my-5">
-        <h2 class="text-center">Opciones disponibles</h2>
+        <h2 class="text-center">Selecciona el tipo de componente a modificar</h2>
         <div class="row g-4">
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Modificar Lista PaaS</h5>
-                        <p class="card-text">Gestiona las plataformas como servicio (PaaS) de TotCloud.</p>
-                        <a href="modificar_lista_paas/modificar_paas.php" class="btn btn-primary">Modificar PaaS</a>
+                        <h5 class="card-title">Modificar CPUs</h5>
+                        <p class="card-text">Gestiona las unidades centrales de procesamiento (CPU).</p>
+                        <a href="cpu/modificar_cpu.php" class="btn btn-primary">Modificar CPUs</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Modificar Lista SaaS</h5>
-                        <p class="card-text">Gestiona los servicios como software (SaaS) de TotCloud.</p>
-                        <a href="modificar_saas.php" class="btn btn-primary">Modificar SaaS</a>
+                        <h5 class="card-title">Modificar RAM</h5>
+                        <p class="card-text">Gestiona los módulos de memoria RAM disponibles.</p>
+                        <a href="ram/modificar_ram.php" class="btn btn-primary">Modificar RAM</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Modificar Componentes del PaaS</h5>
-                        <p class="card-text">Configura y actualiza los componentes asociados a las plataformas PaaS.</p>
-                        <a href="modificar_componentes/modificar_componentes.php" class="btn btn-primary">Modificar Componentes</a>
+                        <h5 class="card-title">Modificar Almacenamientos</h5>
+                        <p class="card-text">Gestiona las unidades de almacenamiento disponibles.</p>
+                        <a href="modificar_almacenamiento.php" class="btn btn-primary">Modificar Almacenamientos</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Ver Mis Organizaciones</h5>
-                        <p class="card-text">Consulta las organizaciones asociadas a este usuario.</p>
-                        <a href="ver_organizaciones.php" class="btn btn-primary">Ver Organizaciones</a>
+                        <h5 class="card-title">Modificar IPs</h5>
+                        <p class="card-text">Gestiona las direcciones IP asignadas o disponibles.</p>
+                        <a href="modificar_ips.php" class="btn btn-primary">Modificar IPs</a>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Botón de volver -->
+        <div class="text-center mt-5">
+            <a href="../trabajador.php" class="btn btn-secondary">Volver al Panel</a>
+        </div>
     </main>
+
     <!-- Pie de página -->
-    <?php include '../../includes/footer.php'; ?>
+    <?php include '../../../includes/footer.php'; ?>
 </body>
 </html>

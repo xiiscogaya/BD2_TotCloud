@@ -1,10 +1,10 @@
 <?php
 session_start();
-include '../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../../includes/db_connect.php'; // Conexión a la base de datos
 
 // Verificar sesión
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+    header('Location: ../../login.php');
     exit;
 }
 

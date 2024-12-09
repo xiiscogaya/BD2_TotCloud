@@ -1,10 +1,10 @@
 <?php
 session_start();
-include '../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../../includes/db_connect.php'; // Conexión a la base de datos
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+    header('Location: ../../login.php');
     exit;
 }
 
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
     <title>Modificar Lista PaaS - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Archivo de estilos personalizados -->
-    <link href="../css/estilos.css" rel="stylesheet">
+    <link href="../../css/estilos.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         .slider-container {
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
 
     <!-- Botón de Volver a Trabajador -->
     <div class="container my-3">
-        <a href="trabajador.php" class="btn btn-secondary">Volver</a>
+        <a href="../trabajador.php" class="btn btn-secondary">Volver</a>
     </div>
 
     <!-- Mostrar mensaje de exito al crear paas -->
@@ -195,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
     </div>
 
     <!-- Pie de página -->
-    <?php include '../../includes/footer.php'; ?>
+    <?php include '../../../includes/footer.php'; ?>
 
     <script>
         const detailsModal = document.getElementById('detailsModal');

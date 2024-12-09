@@ -1,5 +1,5 @@
 <?php
-include '../../includes/db_connect.php';
+include '../../../includes/db_connect.php';
 
 $idPaaS = intval($_GET['id'] ?? 0);
 $data = [];
