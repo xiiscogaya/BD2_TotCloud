@@ -7,6 +7,12 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php');
     exit;
 }
+// Mostrar mensaje de éxito si existe
+$success_message = '';
+if (isset($_SESSION['success_message'])) {
+    $success_message = $_SESSION['success_message'];
+    unset($_SESSION['success_message']); // Eliminar mensaje para evitar que se muestre de nuevo
+}
 
 // Obtener todas las configuraciones PaaS
 $query = "SELECT * FROM paas";
@@ -59,6 +65,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
     <div class="container my-3">
         <a href="trabajador.php" class="btn btn-secondary">Volver</a>
     </div>
+
+    <!-- Mostrar mensaje de cambios realizados -->
+    <?php if (!empty($success_message)): ?>
+        <div class="alert alert-success text-center">
+            <?php echo htmlspecialchars($success_message); ?>
+        </div>
+    <?php endif; ?>
+
 
     <!-- Contenido principal -->
     <main class="container my-5">
