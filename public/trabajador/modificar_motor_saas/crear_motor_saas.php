@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Crear Motor
         $query_motor = "INSERT INTO motor (idMotor, Nombre, Version, PrecioH) VALUES (?, ?, ?, ?)";
         $stmt_motor = $conn->prepare($query_motor);
-        $stmt_motor->bind_param('issi', $idMotor, $nombre, $version, $precioH);    }
+        $stmt_motor->bind_param('issd', $idMotor, $nombre, $version, $precioH); 
+       }
         if ($stmt_motor->execute()) {
 
             //Guardar mensaje en sesión
