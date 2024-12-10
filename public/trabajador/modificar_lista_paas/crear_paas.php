@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $message = 'La IP seleccionada ya está asociada a otra configuración.';
         } else {
             // Determinar el siguiente ID disponible para PaaS
-            $query_next_id = "SELECT COALESCE(MAX(idPaaS), 0) + 1 AS next_id FROM paas";
+            $query_next_id = "SELECT MIN(a.idPaaS)+1 AS next_id FROM paas a LEFT JOIN paas b ON a.idPaaS = b.idPaaS-1 WHERE b.idPaaS IS NULL";-
             $result_next_id = $conn->query($query_next_id);
             $row_next_id = $result_next_id->fetch_assoc();
             $idPaaS = $row_next_id['next_id'];
