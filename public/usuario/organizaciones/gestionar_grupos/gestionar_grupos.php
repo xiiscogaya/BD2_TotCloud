@@ -31,6 +31,59 @@ if ($result_check->num_rows === 0) {
     exit;
 }
 
+// Manejar la creación de grupos
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'crear') {
+    $nombre = trim($_POST['nombre']);
+    $descripcion = trim($_POST['descripcion']);
+
+    if (!empty($nombre)) {
+        // Verificar si ya existe un grupo con el mismo nombre en la organización
+        $query_check_duplicate = "SELECT * FROM grupo WHERE Nombre = ? AND idOrg = ?";
+        $stmt_check_duplicate = $conn->prepare($query_check_duplicate);
+        $stmt_check_duplicate->bind_param('si', $nombre, $idOrganizacion);
+        $stmt_check_duplicate->execute();
+        $result_check_duplicate = $stmt_check_duplicate->get_result();
+
+        if ($result_check_duplicate->num_rows > 0) {
+            $_SESSION['error_message'] = 'Ya existe un grupo con ese nombre en la organización.';
+        } else {
+            // Obtener el ID más bajo disponible para el grupo
+            $query_next_group_id = "
+                SELECT COALESCE(MIN(t1.idGrupo + 1), 1) AS next_id
+                FROM grupo t1
+                LEFT JOIN grupo t2 ON t1.idGrupo + 1 = t2.idGrupo
+                WHERE t2.idGrupo IS NULL";
+            $result_next_group_id = $conn->query($query_next_group_id);
+            $next_group_id = $result_next_group_id->fetch_assoc()['next_id'];
+
+            // Insertar el nuevo grupo
+            $query_create_group = "INSERT INTO grupo (idGrupo, Nombre, Descripcion, idOrg) VALUES (?, ?, ?, ?)";
+            $stmt_create_group = $conn->prepare($query_create_group);
+            $stmt_create_group->bind_param('issi', $next_group_id, $nombre, $descripcion, $idOrganizacion);
+
+            if ($stmt_create_group->execute()) {
+                // Relacionar al creador del grupo en la tabla r_usuario_grupo
+                $query_add_creator = "INSERT INTO r_usuario_grupo (idUsuario, idGrupo) VALUES (?, ?)";
+                $stmt_add_creator = $conn->prepare($query_add_creator);
+                $stmt_add_creator->bind_param('ii', $user_id, $next_group_id);
+
+                if ($stmt_add_creator->execute()) {
+                    $_SESSION['success_message'] = 'Grupo creado exitosamente y asignado al usuario.';
+                } else {
+                    $_SESSION['error_message'] = 'El grupo fue creado, pero no se pudo asignar al usuario.';
+                }
+            } else {
+                $_SESSION['error_message'] = 'Error al crear el grupo.';
+            }
+        }
+    } else {
+        $_SESSION['error_message'] = 'El nombre del grupo es obligatorio.';
+    }
+
+    header('Location: gestionar_grupos.php?idOrg=' . $idOrganizacion);
+    exit;
+}
+
 // Obtener los grupos a los que pertenece el usuario en esta organización
 $query_groups = "
     SELECT g.idGrupo, g.Nombre, g.Descripcion 
@@ -41,42 +94,8 @@ $stmt_groups = $conn->prepare($query_groups);
 $stmt_groups->bind_param('ii', $idOrganizacion, $user_id);
 $stmt_groups->execute();
 $result_groups = $stmt_groups->get_result();
-
-// Gestionar creación de grupos
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'crear') {
-    $nombre = trim($_POST['nombre']);
-    $descripcion = trim($_POST['descripcion']);
-
-    if (!empty($nombre)) {
-        // Obtener el próximo ID para el grupo
-        $query_next_group_id = "SELECT COALESCE(MAX(idGrupo), 0) + 1 AS next_id FROM grupo";
-        $result_next_group_id = $conn->query($query_next_group_id);
-        $next_group_id = $result_next_group_id->fetch_assoc()['next_id'];
-
-        // Insertar el nuevo grupo
-        $query_create_group = "INSERT INTO grupo (idGrupo, Nombre, Descripcion, idOrg) VALUES (?, ?, ?, ?)";
-        $stmt_create_group = $conn->prepare($query_create_group);
-        $stmt_create_group->bind_param('issi', $next_group_id, $nombre, $descripcion, $idOrganizacion);
-
-        if ($stmt_create_group->execute()) {
-            // Relacionar al creador del grupo en la tabla r_usuario_grupo
-            $query_add_creator = "INSERT INTO r_usuario_grupo (idUsuario, idGrupo) VALUES (?, ?)";
-            $stmt_add_creator = $conn->prepare($query_add_creator);
-            $stmt_add_creator->bind_param('ii', $user_id, $next_group_id);
-
-            if ($stmt_add_creator->execute()) {
-                $_SESSION['success_message'] = 'Grupo creado exitosamente y asignado al usuario.';
-            } else {
-                $_SESSION['error_message'] = 'El grupo fue creado, pero no se pudo asignar al usuario.';
-            }
-        } else {
-            $_SESSION['error_message'] = 'Error al crear el grupo.';
-        }
-    } else {
-        $_SESSION['error_message'] = 'El nombre del grupo es obligatorio.';
-    }
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -125,10 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <td><?php echo htmlspecialchars($group['Descripcion']); ?></td>
                         <td>
                             <?php if ($group['Nombre'] === 'admin'): ?>
-                                <!-- Solo permitir añadir personas para el grupo admin -->
                                 <a href="añadir_personas.php?idGrupo=<?php echo $group['idGrupo']; ?>&idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success btn-sm">Añadir Personas</a>
                             <?php else: ?>
-                                <!-- Permitir editar, eliminar y añadir personas para otros grupos -->
                                 <a href="editar_grupo.php?idGrupo=<?php echo $group['idGrupo']; ?>&idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-warning btn-sm">Editar</a>
                                 <a href="añadir_personas.php?idGrupo=<?php echo $group['idGrupo']; ?>&idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success btn-sm">Añadir Personas</a>
                                 <form method="POST" style="display:inline-block;">

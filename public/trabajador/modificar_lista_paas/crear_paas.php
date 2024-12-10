@@ -13,82 +13,85 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Datos principales de PaaS
     $nombre = trim($_POST['nombre']);
-    $idSO = intval($_POST['idSO']);
-    $idIp = intval($_POST['idIp']); // IP seleccionada
     $estado = "En pruebas"; // Estado predefinido
-
-    // Datos de componentes seleccionados
-    $cpus = $_POST['cpus'] ?? [];
-    $rams = $_POST['rams'] ?? [];
+    $idCPU = intval($_POST['idCPU']);
+    $cantidadCPU = intval($_POST['cantidad_cpu']);
+    $idRAM = intval($_POST['idRAM']);
+    $cantidadRAM = intval($_POST['cantidad_ram']);
     $almacenamientos = $_POST['almacenamientos'] ?? [];
 
-    if (empty($nombre) || $idSO <= 0 || $idIp <= 0) {
+    if (empty($nombre) || $idCPU <= 0 || $cantidadCPU <= 0 || $idRAM <= 0 || $cantidadRAM <= 0) {
         $message = 'Todos los campos son obligatorios.';
     } else {
-        // Verificar que la IP no esté ya asociada a otra configuración
-        $check_ip_query = "SELECT idPaaS FROM direccionip WHERE idIp = ? AND idPaaS IS NOT NULL";
-        $stmt_check_ip = $conn->prepare($check_ip_query);
-        $stmt_check_ip->bind_param('i', $idIp);
-        $stmt_check_ip->execute();
-        $result_ip = $stmt_check_ip->get_result();
+        // Verificar que la cantidad de CPU y RAM no exceda lo disponible
+        $cpu_check_query = "SELECT Cantidad FROM cpu WHERE idCPU = ?";
+        $stmt_cpu_check = $conn->prepare($cpu_check_query);
+        $stmt_cpu_check->bind_param('i', $idCPU);
+        $stmt_cpu_check->execute();
+        $result_cpu_check = $stmt_cpu_check->get_result();
+        $availableCPU = $result_cpu_check->fetch_assoc()['Cantidad'];
 
-        if ($result_ip->num_rows > 0) {
-            $message = 'La IP seleccionada ya está asociada a otra configuración.';
+        $ram_check_query = "SELECT Cantidad FROM ram WHERE idRAM = ?";
+        $stmt_ram_check = $conn->prepare($ram_check_query);
+        $stmt_ram_check->bind_param('i', $idRAM);
+        $stmt_ram_check->execute();
+        $result_ram_check = $stmt_ram_check->get_result();
+        $availableRAM = $result_ram_check->fetch_assoc()['Cantidad'];
+
+        if ($cantidadCPU > $availableCPU || $cantidadRAM > $availableRAM) {
+            $message = 'La cantidad seleccionada de CPU o RAM excede el stock disponible.';
         } else {
             // Determinar el siguiente ID disponible para PaaS
             $query_next_id = "SELECT COALESCE(MIN(a.idPaaS)+1, 1) AS next_id FROM paas a LEFT JOIN paas b ON a.idPaaS = b.idPaaS-1 WHERE b.idPaaS IS NULL";
             $result_next_id = $conn->query($query_next_id);
-            $row_next_id = $result_next_id->fetch_assoc();
-            $idPaaS = $row_next_id['next_id'];
+            $idPaaS = $result_next_id->fetch_assoc()['next_id'];
 
             // Crear configuración PaaS
-            $query_paas = "INSERT INTO paas (idPaaS, Nombre, Estado, idSO) VALUES (?, ?, ?, ?)";
+            $query_paas = "INSERT INTO paas (idPaaS, Nombre, Estado) VALUES (?, ?, ?)";
             $stmt_paas = $conn->prepare($query_paas);
-            $stmt_paas->bind_param('issi', $idPaaS, $nombre, $estado, $idSO);
+            $stmt_paas->bind_param('iss', $idPaaS, $nombre, $estado);
 
             if ($stmt_paas->execute()) {
-                // Asociar la IP a esta configuración PaaS
-                $update_ip_query = "UPDATE direccionip SET idPaaS = ? WHERE idIp = ?";
-                $stmt_ip = $conn->prepare($update_ip_query);
-                $stmt_ip->bind_param('ii', $idPaaS, $idIp);
-                $stmt_ip->execute();
+                // Insertar CPU seleccionada
+                $query_cpu = "INSERT INTO R_PaaS_CPU (idPaaS, idCPU, Cantidad) VALUES (?, ?, ?)";
+                $stmt_cpu = $conn->prepare($query_cpu);
+                $stmt_cpu->bind_param('iii', $idPaaS, $idCPU, $cantidadCPU);
+                $stmt_cpu->execute();
 
-                // Insertar componentes seleccionados y actualizar cantidades disponibles
-                $insert_component = function($table, $idPaaS, $component_column, $component_id, $cantidad, $update_table) use ($conn) {
-                    // Insertar en la tabla de relación
-                    $query = "INSERT INTO $table (idPaaS, $component_column, Cantidad) VALUES (?, ?, ?)";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bind_param('iii', $idPaaS, $component_id, $cantidad);
-                    $stmt->execute();
+                // Actualizar stock de CPU
+                $query_update_cpu = "UPDATE cpu SET Cantidad = Cantidad - ? WHERE idCPU = ?";
+                $stmt_update_cpu = $conn->prepare($query_update_cpu);
+                $stmt_update_cpu->bind_param('ii', $cantidadCPU, $idCPU);
+                $stmt_update_cpu->execute();
 
-                    // Restar la cantidad en la tabla principal
-                    $update_query = "UPDATE $update_table SET Cantidad = Cantidad - ? WHERE $component_column = ?";
-                    $stmt_update = $conn->prepare($update_query);
-                    $stmt_update->bind_param('ii', $cantidad, $component_id);
-                    $stmt_update->execute();
-                };
+                // Insertar RAM seleccionada
+                $query_ram = "INSERT INTO R_PaaS_RAM (idPaaS, idRAM, Cantidad) VALUES (?, ?, ?)";
+                $stmt_ram = $conn->prepare($query_ram);
+                $stmt_ram->bind_param('iii', $idPaaS, $idRAM, $cantidadRAM);
+                $stmt_ram->execute();
 
-                // Insertar CPUs seleccionadas
-                foreach ($cpus as $cpu) {
-                    if (!empty($_POST["cantidad_cpu_$cpu"])) {
-                        $cantidad = intval($_POST["cantidad_cpu_$cpu"]);
-                        $insert_component('R_PaaS_CPU', $idPaaS, 'idCPU', $cpu, $cantidad, 'cpu');
-                    }
-                }
-
-                // Insertar RAMs seleccionadas
-                foreach ($rams as $ram) {
-                    if (!empty($_POST["cantidad_ram_$ram"])) {
-                        $cantidad = intval($_POST["cantidad_ram_$ram"]);
-                        $insert_component('R_PaaS_RAM', $idPaaS, 'idRAM', $ram, $cantidad, 'ram');
-                    }
-                }
+                // Actualizar stock de RAM
+                $query_update_ram = "UPDATE ram SET Cantidad = Cantidad - ? WHERE idRAM = ?";
+                $stmt_update_ram = $conn->prepare($query_update_ram);
+                $stmt_update_ram->bind_param('ii', $cantidadRAM, $idRAM);
+                $stmt_update_ram->execute();
 
                 // Insertar Almacenamientos seleccionados
                 foreach ($almacenamientos as $almacenamiento) {
                     if (!empty($_POST["cantidad_almacenamiento_$almacenamiento"])) {
                         $cantidad = intval($_POST["cantidad_almacenamiento_$almacenamiento"]);
-                        $insert_component('R_PaaS_Almacenamiento', $idPaaS, 'idAlmacenamiento', $almacenamiento, $cantidad, 'almacenamiento');
+
+                        // Insertar en la tabla de relación
+                        $query_storage = "INSERT INTO R_PaaS_Almacenamiento (idPaaS, idAlmacenamiento, Cantidad) VALUES (?, ?, ?)";
+                        $stmt_storage = $conn->prepare($query_storage);
+                        $stmt_storage->bind_param('iii', $idPaaS, $almacenamiento, $cantidad);
+                        $stmt_storage->execute();
+
+                        // Actualizar stock de almacenamiento
+                        $query_update_storage = "UPDATE almacenamiento SET Cantidad = Cantidad - ? WHERE idAlmacenamiento = ?";
+                        $stmt_update_storage = $conn->prepare($query_update_storage);
+                        $stmt_update_storage->bind_param('ii', $cantidad, $almacenamiento);
+                        $stmt_update_storage->execute();
                     }
                 }
 
@@ -108,10 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $cpus = $conn->query("SELECT * FROM cpu WHERE Cantidad > 0");
 $rams = $conn->query("SELECT * FROM ram WHERE Cantidad > 0");
 $almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0");
-$ips = $conn->query("SELECT * FROM direccionip WHERE idPaaS IS NULL"); // Solo IPs no asociadas
-$sos = $conn->query("SELECT * FROM sistemaoperativo");
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
@@ -120,8 +120,8 @@ $sos = $conn->query("SELECT * FROM sistemaoperativo");
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear PaaS - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Archivo de estilos personalizados -->
     <link href="../../css/estilos.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <header class="bg-primary text-white text-center py-3">
@@ -129,7 +129,6 @@ $sos = $conn->query("SELECT * FROM sistemaoperativo");
     </header>
 
     <main class="container my-5">
-        <!-- Botón de Volver a Trabajador -->
         <div class="container my-3">
             <a href="modificar_paas.php" class="btn btn-secondary">Volver</a>
         </div>
@@ -144,48 +143,31 @@ $sos = $conn->query("SELECT * FROM sistemaoperativo");
                 <label for="nombre" class="form-label">Nombre</label>
                 <input type="text" class="form-control" id="nombre" name="nombre" required>
             </div>
+
             <div class="mb-3">
-                <label for="idSO" class="form-label">Sistema Operativo</label>
-                <select class="form-select" id="idSO" name="idSO" required>
-                    <option value="">Selecciona un Sistema Operativo</option>
-                    <?php while ($row_so = $sos->fetch_assoc()): ?>
-                        <option value="<?php echo $row_so['idSO']; ?>"><?php echo htmlspecialchars($row_so['Nombre']); ?></option>
+                <label for="idCPU" class="form-label">Seleccionar CPU</label>
+                <select class="form-select" id="idCPU" name="idCPU" required>
+                    <option value="" data-max="0">Selecciona un tipo de CPU</option>
+                    <?php while ($row = $cpus->fetch_assoc()): ?>
+                        <option value="<?php echo $row['idCPU']; ?>" data-max="<?php echo $row['Cantidad']; ?>">
+                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Nucleos'] . ' núcleos a ' . $row['Frecuencia'] . 'GHz (Disponible: ' . $row['Cantidad'] . ')'); ?>
+                        </option>
                     <?php endwhile; ?>
                 </select>
+                <input type="number" class="form-control mt-2" id="cantidadCPU" name="cantidad_cpu" min="1" placeholder="Cantidad de CPU" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Seleccionar CPUs</label>
-                <?php while ($row = $cpus->fetch_assoc()): ?>
-                    <div class="d-flex align-items-center mb-2">
-                        <input type="checkbox" name="cpus[]" value="<?php echo $row['idCPU']; ?>">
-                        <span class="ms-2"><?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Nucleos'] . ' núcleos a ' . $row['Frecuencia'] . 'GHz (Máximo: ' . $row['Cantidad'] . ')'); ?></span>
-                        <input type="number" 
-                               name="cantidad_cpu_<?php echo $row['idCPU']; ?>" 
-                               min="1" 
-                               max="<?php echo $row['Cantidad']; ?>" 
-                               class="form-control ms-3" 
-                               style="max-width: 100px;" 
-                               placeholder="Máx: <?php echo $row['Cantidad']; ?>">
-                    </div>
-                <?php endwhile; ?>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Seleccionar RAM</label>
-                <?php while ($row = $rams->fetch_assoc()): ?>
-                    <div class="d-flex align-items-center mb-2">
-                        <input type="checkbox" name="rams[]" value="<?php echo $row['idRAM']; ?>">
-                        <span class="ms-2"><?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB a ' . $row['Frecuencia'] . 'MHz (Máximo: ' . $row['Cantidad'] . ')'); ?></span>
-                        <input type="number" 
-                               name="cantidad_ram_<?php echo $row['idRAM']; ?>" 
-                               min="1" 
-                               max="<?php echo $row['Cantidad']; ?>" 
-                               class="form-control ms-3" 
-                               style="max-width: 100px;" 
-                               placeholder="Máx: <?php echo $row['Cantidad']; ?>">
-                    </div>
-                <?php endwhile; ?>
+                <label for="idRAM" class="form-label">Seleccionar RAM</label>
+                <select class="form-select" id="idRAM" name="idRAM" required>
+                    <option value="" data-max="0">Selecciona un tipo de RAM</option>
+                    <?php while ($row = $rams->fetch_assoc()): ?>
+                        <option value="<?php echo $row['idRAM']; ?>" data-max="<?php echo $row['Cantidad']; ?>">
+                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB a ' . $row['Frecuencia'] . 'MHz (Disponible: ' . $row['Cantidad'] . ')'); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+                <input type="number" class="form-control mt-2" id="cantidadRAM" name="cantidad_ram" min="1" placeholder="Cantidad de RAM" required>
             </div>
 
             <div class="mb-3">
@@ -193,32 +175,36 @@ $sos = $conn->query("SELECT * FROM sistemaoperativo");
                 <?php while ($row = $almacenamientos->fetch_assoc()): ?>
                     <div class="d-flex align-items-center mb-2">
                         <input type="checkbox" name="almacenamientos[]" value="<?php echo $row['idAlmacenamiento']; ?>">
-                        <span class="ms-2"><?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB ' . $row['Tipo'] . ' (Lectura: ' . $row['VelocidadLectura'] . 'MB/s, Escritura: ' . $row['VelocidadEscritura'] . 'MB/s) Máximo: ' . $row['Cantidad']); ?></span>
+                        <span class="ms-2"><?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB ' . $row['Tipo'] . ' (Máx: ' . $row['Cantidad'] . ')'); ?></span>
                         <input type="number" 
                                name="cantidad_almacenamiento_<?php echo $row['idAlmacenamiento']; ?>" 
                                min="1" 
                                max="<?php echo $row['Cantidad']; ?>" 
                                class="form-control ms-3" 
                                style="max-width: 100px;" 
-                               placeholder="Máx: <?php echo $row['Cantidad']; ?>">
+                               placeholder="Cantidad">
                     </div>
                 <?php endwhile; ?>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Seleccionar IP</label>
-                <select class="form-select" name="idIp" required>
-                    <option value="">Selecciona una IP</option>
-                    <?php while ($row = $ips->fetch_assoc()): ?>
-                        <option value="<?php echo $row['idIp']; ?>">
-                            <?php echo htmlspecialchars($row['Direccion']); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Crear Configuración</button>
         </form>
     </main>
+
+    <script>
+        $(document).ready(function () {
+            // Actualizar el máximo permitido en el campo de cantidad de CPU
+            $('#idCPU').on('change', function () {
+                const max = $(this).find(':selected').data('max');
+                $('#cantidadCPU').attr('max', max).attr('placeholder', 'Máx: ' + max);
+            });
+
+            // Actualizar el máximo permitido en el campo de cantidad de RAM
+            $('#idRAM').on('change', function () {
+                const max = $(this).find(':selected').data('max');
+                $('#cantidadRAM').attr('max', max).attr('placeholder', 'Máx: ' + max);
+            });
+        });
+    </script>
 </body>
 </html>

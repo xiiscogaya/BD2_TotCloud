@@ -123,7 +123,7 @@ $result_paas = $stmt_paas->get_result();
         <h2 class="text-center mb-4">Lista de SaaS Asociados</h2>
         <?php if (in_array('Contratar saas', $privileges)): ?>
         <div class="mb-3 text-end">
-            <a href="contratar_saas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo SaaS</a>
+            <a href="contratar_saas/contratar_saas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo SaaS</a>
         </div>
         <?php endif; ?>
         <table class="table table-bordered">
@@ -159,7 +159,7 @@ $result_paas = $stmt_paas->get_result();
         <h2 class="text-center mb-4">Lista de PaaS Asociados</h2>
         <?php if (in_array('Contratar paas', $privileges)): ?>
         <div class="mb-3 text-end">
-            <a href="contratar_paas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo PaaS</a>
+            <a href="contratar_paas/contratar_paas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo PaaS</a>
         </div>
         <?php endif; ?>
         <table class="table table-bordered">
