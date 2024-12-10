@@ -47,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt_group->bind_param('ii', $next_group_id, $next_org_id);
 
                 if ($stmt_group->execute()) {
-                    // Obtener todos los privilegios disponibles
-                    $privileges_query = "SELECT Nombre FROM privilegio";
+                    // Obtener todos los privilegios disponibles (idPrivilegio)
+                    $privileges_query = "SELECT idPrivilegio FROM privilegio";
                     $privileges_result = $conn->query($privileges_query);
 
                     $all_privileges_added = true;
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Insertar cada privilegio en r_grup_priv para el grupo "admin"
                         $insert_priv_query = "INSERT INTO r_grup_priv (idGrup, idPriv) VALUES (?, ?)";
                         $stmt_priv = $conn->prepare($insert_priv_query);
-                        $stmt_priv->bind_param('is', $next_group_id, $privilege['Nombre']);
+                        $stmt_priv->bind_param('ii', $next_group_id, $privilege['idPrivilegio']);
 
                         if (!$stmt_priv->execute()) {
                             $all_privileges_added = false;
@@ -65,9 +65,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     if ($all_privileges_added) {
-                        $_SESSION['success_message'] = 'Organización y grupo "admin" creados exitosamente.';
-                        header('Location: usuario.php');
-                        exit;
+                        // Insertar el usuario creador en el grupo "admin"
+                        $insert_usuario_grupo = "INSERT INTO r_usuario_grupo (idUsuario, idGrupo) VALUES (?, ?)";
+                        $stmt_usuario_grupo = $conn->prepare($insert_usuario_grupo);
+                        $stmt_usuario_grupo->bind_param('ii', $idCreador, $next_group_id);
+
+                        if ($stmt_usuario_grupo->execute()) {
+                            $_SESSION['success_message'] = 'Organización y grupo "admin" creados exitosamente.';
+                            header('Location: usuario.php');
+                            exit;
+                        } else {
+                            $error = 'Error al vincular al usuario con el grupo admin.';
+                        }
                     } else {
                         $error = 'Error al asignar privilegios al grupo admin.';
                     }

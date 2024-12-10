@@ -37,6 +37,24 @@ $stmt_org->bind_param('i', $idOrganizacion);
 $stmt_org->execute();
 $org = $stmt_org->get_result()->fetch_assoc();
 
+// Obtener los privilegios del usuario en esta organización
+$query_privileges = "
+    SELECT p.Nombre 
+    FROM privilegio p
+    JOIN r_grup_priv rgp ON p.idPrivilegio = rgp.idPriv
+    JOIN grupo g ON rgp.idGrup = g.idGrupo
+    JOIN r_usuario_grupo rug ON rug.idGrupo = g.idGrupo
+    WHERE rug.idUsuario = ? AND g.idOrg = ?";
+$stmt_privileges = $conn->prepare($query_privileges);
+$stmt_privileges->bind_param('ii', $user_id, $idOrganizacion);
+$stmt_privileges->execute();
+$result_privileges = $stmt_privileges->get_result();
+
+$privileges = [];
+while ($privilege = $result_privileges->fetch_assoc()) {
+    $privileges[] = $privilege['Nombre'];
+}
+
 // Obtener lista de SaaS asociados
 $query_saas = "SELECT * FROM saas WHERE idPaaS IN (SELECT idPaaS FROM r_paas_grup WHERE idGrup IN (SELECT idGrupo FROM grupo WHERE idOrg = ?))";
 $stmt_saas = $conn->prepare($query_saas);
@@ -73,7 +91,7 @@ $result_paas = $stmt_paas->get_result();
             <p><?php echo htmlspecialchars($org['Descripcion']); ?></p>
         </div>
         <div>
-            <a href="../../usuario.php" class="btn btn-outline-light">Volver a Mis Organizaciones</a>
+            <a href="../usuario.php" class="btn btn-outline-light">Volver a Mis Organizaciones</a>
         </div>
     </header>
 
@@ -91,11 +109,23 @@ $result_paas = $stmt_paas->get_result();
             </div>
         <?php endif; ?>
 
+        <!-- Acciones generales -->
+        <div class="d-flex justify-content-between mb-4">
+            <?php if (in_array('Gestionar grupos', $privileges)): ?>
+                <a href="gestionar_grupos/gestionar_grupos.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-info">Gestionar Grupos</a>
+            <?php endif; ?>
+            <?php if (in_array('Añadir usuarios', $privileges)): ?>
+                <a href="añadir_usuarios/añadir_usuarios.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-warning">Añadir Personas</a>
+            <?php endif; ?>
+        </div>
+
         <!-- SaaS -->
         <h2 class="text-center mb-4">Lista de SaaS Asociados</h2>
+        <?php if (in_array('Contratar saas', $privileges)): ?>
         <div class="mb-3 text-end">
             <a href="contratar_saas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo SaaS</a>
         </div>
+        <?php endif; ?>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -103,6 +133,9 @@ $result_paas = $stmt_paas->get_result();
                     <th>Nombre</th>
                     <th>Usuario</th>
                     <th>Contraseña</th>
+                    <?php if (in_array('Modificar saas', $privileges)): ?>
+                        <th>Acciones</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -112,6 +145,11 @@ $result_paas = $stmt_paas->get_result();
                         <td><?php echo htmlspecialchars($saas['Nombre']); ?></td>
                         <td><?php echo htmlspecialchars($saas['Usuario']); ?></td>
                         <td><?php echo htmlspecialchars($saas['Contraseña']); ?></td>
+                        <?php if (in_array('Modificar saas', $privileges)): ?>
+                        <td>
+                            <a href= "modificar_saas.php?id=<?php echo $saas['idSaaS']; ?>" class="btn btn-warning btn-sm">Editar</a>
+                        </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endwhile; ?>
             </tbody>
@@ -119,15 +157,20 @@ $result_paas = $stmt_paas->get_result();
 
         <!-- PaaS -->
         <h2 class="text-center mb-4">Lista de PaaS Asociados</h2>
+        <?php if (in_array('Contratar paas', $privileges)): ?>
         <div class="mb-3 text-end">
             <a href="contratar_paas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo PaaS</a>
         </div>
+        <?php endif; ?>
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
                     <th>Estado</th>
+                    <?php if (in_array('Codificar paas', $privileges)): ?>
+                        <th>Acciones</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -136,6 +179,11 @@ $result_paas = $stmt_paas->get_result();
                         <td><?php echo htmlspecialchars($paas['idPaaS']); ?></td>
                         <td><?php echo htmlspecialchars($paas['Nombre']); ?></td>
                         <td><?php echo htmlspecialchars($paas['Estado']); ?></td>
+                        <?php if (in_array('Modificar paas', $privileges)): ?>
+                        <td>
+                            <a href="modificar_paas.php?id=<?php echo $paas['idPaaS']; ?>" class="btn btn-warning btn-sm">Editar</a>
+                        </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endwhile; ?>
             </tbody>
