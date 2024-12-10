@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 08-12-2024 a las 20:57:35
+-- Tiempo de generación: 10-12-2024 a las 14:36:29
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -44,9 +44,9 @@ CREATE TABLE `almacenamiento` (
 
 INSERT INTO `almacenamiento` (`idAlmacenamiento`, `Nombre`, `Tipo`, `VelocidadLectura`, `VelocidadEscritura`, `Capacidad`, `PrecioH`, `Cantidad`) VALUES
 (1, 'Samsung 970 EVO Plus', 'SSD', 3500.00, 3300.00, 1000.00, 0.20, 25),
-(2, 'Seagate Barracuda', 'HDD', 150.00, 140.00, 2000.00, 0.10, 50),
+(2, 'Seagate Barracuda', 'HDD', 150.00, 140.00, 2000.00, 0.10, 53),
 (3, 'Western Digital Blue SN570', 'NVMe', 3500.00, 3000.00, 512.00, 0.25, 15),
-(4, 'Kingston A400', 'SATA', 500.00, 450.00, 256.00, 0.05, 40);
+(4, 'Kingston A400', 'SATA', 500.00, 450.00, 256.00, 0.05, 35);
 
 -- --------------------------------------------------------
 
@@ -86,10 +86,11 @@ CREATE TABLE `cpu` (
 --
 
 INSERT INTO `cpu` (`idCPU`, `Nombre`, `Fabricante`, `Arquitectura`, `Nucleos`, `Frecuencia`, `PrecioH`, `Cantidad`) VALUES
-(1, 'Intel Xeon E5', 'Intel', 'x64', 8, 2.50, 0.30, 10),
-(2, 'AMD Ryzen 9 5900X', 'AMD', 'x64', 12, 3.70, 0.50, 15),
+(2, 'AMD Ryzen 9 5900X', 'AMD', 'x64', 12, 3.70, 0.50, 14),
 (3, 'Intel Core i7 11700K', 'Intel', 'x64', 8, 3.60, 0.40, 20),
-(4, 'AMD EPYC 7502P', 'AMD', 'x64', 32, 2.20, 0.70, 5);
+(4, 'AMD EPYC 7502P', 'AMD', 'x64', 32, 2.20, 0.70, 5),
+(5, 'Confi4', '34', '44', 2, 0.20, 0.00, 2),
+(7, 'Confi1', '678', '909', 2, 0.20, 0.00, 2);
 
 -- --------------------------------------------------------
 
@@ -101,7 +102,6 @@ CREATE TABLE `direccionip` (
   `idIp` int(11) NOT NULL,
   `Direccion` varchar(45) NOT NULL,
   `PrecioH` decimal(10,2) NOT NULL,
-  `Estado` varchar(50) NOT NULL,
   `idPaaS` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -109,11 +109,9 @@ CREATE TABLE `direccionip` (
 -- Volcado de datos para la tabla `direccionip`
 --
 
-INSERT INTO `direccionip` (`idIp`, `Direccion`, `PrecioH`, `Estado`, `idPaaS`) VALUES
-(1, '192.168.1.1', 0.05, 'Disponible', NULL),
-(2, '192.168.1.2', 0.05, 'Disponible', NULL),
-(3, '192.168.1.3', 0.05, 'Disponible', NULL),
-(4, '192.168.1.4', 0.05, 'Disponible', NULL);
+INSERT INTO `direccionip` (`idIp`, `Direccion`, `PrecioH`, `idPaaS`) VALUES
+(1, '192.168.1.1', 0.14, NULL),
+(2, '192.168.1.2', 0.07, NULL);
 
 -- --------------------------------------------------------
 
@@ -127,6 +125,16 @@ CREATE TABLE `grupo` (
   `Descripcion` text DEFAULT NULL,
   `idOrg` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `grupo`
+--
+
+INSERT INTO `grupo` (`idGrupo`, `Nombre`, `Descripcion`, `idOrg`) VALUES
+(3, 'admin', 'Grupo con todos los permisos', 4),
+(4, 'admin', 'Grupo con todos los permisos', 5),
+(5, 'hola', 'hola', 5),
+(6, 'Confi1', 'ne', 5);
 
 -- --------------------------------------------------------
 
@@ -170,6 +178,15 @@ CREATE TABLE `organizacion` (
   `idCreador` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `organizacion`
+--
+
+INSERT INTO `organizacion` (`idOrganizacion`, `Nombre`, `Descripcion`, `idCreador`) VALUES
+(3, 'Confi1', 'hola', 0),
+(4, 'OrgaToni', 'Creada por Tonii100', 1),
+(5, 'Rizem', 'Grupo', 0);
+
 -- --------------------------------------------------------
 
 --
@@ -183,6 +200,13 @@ CREATE TABLE `paas` (
   `idSO` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `paas`
+--
+
+INSERT INTO `paas` (`idPaaS`, `Nombre`, `Estado`, `idSO`) VALUES
+(1, 'Confi1', 'En pruebas', 2);
+
 -- --------------------------------------------------------
 
 --
@@ -194,6 +218,20 @@ CREATE TABLE `privilegio` (
   `Nombre` varchar(100) NOT NULL,
   `Descripcion` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `privilegio`
+--
+
+INSERT INTO `privilegio` (`idPrivilegio`, `Nombre`, `Descripcion`) VALUES
+(1, 'Contratar paas', 'Permite al usuario contratar nuevos servicios PaaS'),
+(2, 'Contratar saas', 'Permite al usuario contratar nuevos servicios SaaS'),
+(3, 'Modificar paas', 'Permite al usuario modificar los servicios PaaS contratados'),
+(4, 'Modificar saas', 'Permite al usuario modificar los servicios SaaS contratados'),
+(5, 'Eliminar paas', 'Permite al usuario eliminar servicios PaaS contratados'),
+(6, 'Eliminar saas', 'Permite al usuario eliminar servicios SaaS contratados'),
+(7, 'Añadir usuarios', 'Permite al usuario añadir usuarios a la organización'),
+(8, 'Gestionar grupos', 'Permite al usuario gestionar y modificar los grupos de la organización');
 
 -- --------------------------------------------------------
 
@@ -208,7 +246,7 @@ CREATE TABLE `ram` (
   `Frecuencia` decimal(10,2) NOT NULL,
   `Capacidad` decimal(10,2) NOT NULL,
   `Tipo` varchar(50) NOT NULL,
-  `PrecioH` decimal(10,2) NOT NULL, 
+  `PrecioH` decimal(10,2) NOT NULL,
   `Cantidad` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -218,7 +256,7 @@ CREATE TABLE `ram` (
 
 INSERT INTO `ram` (`idRAM`, `Nombre`, `Fabricante`, `Frecuencia`, `Capacidad`, `Tipo`, `PrecioH`, `Cantidad`) VALUES
 (1, 'Kingston DDR4', 'Kingston', 3200.00, 16.00, 'DDR4', 0.10, 50),
-(2, 'Corsair Vengeance LPX', 'Corsair', 3600.00, 32.00, 'DDR4', 0.15, 30),
+(2, 'Corsair Vengeance LPX', 'Corsair', 3600.00, 32.00, 'DDR4', 0.15, 29),
 (3, 'HyperX Fury DDR5', 'HyperX', 4800.00, 16.00, 'DDR5', 0.20, 20),
 (4, 'G.Skill Trident Z', 'G.Skill', 3200.00, 64.00, 'DDR4', 0.25, 10);
 
@@ -231,6 +269,61 @@ INSERT INTO `ram` (`idRAM`, `Nombre`, `Fabricante`, `Frecuencia`, `Capacidad`, `
 CREATE TABLE `r_grup_priv` (
   `idGrup` int(11) NOT NULL,
   `idPriv` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_grup_priv`
+--
+
+INSERT INTO `r_grup_priv` (`idGrup`, `idPriv`) VALUES
+(3, 1),
+(3, 2),
+(3, 3),
+(3, 4),
+(3, 5),
+(3, 6),
+(3, 7),
+(3, 8),
+(4, 1),
+(4, 2),
+(4, 3),
+(4, 4),
+(4, 5),
+(4, 6),
+(4, 7),
+(4, 8),
+(5, 3),
+(5, 4);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `r_paas_almacenamiento`
+--
+
+CREATE TABLE `r_paas_almacenamiento` (
+  `idPaaS` int(11) NOT NULL,
+  `idAlmacenamiento` int(11) NOT NULL,
+  `Cantidad` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_paas_almacenamiento`
+--
+
+INSERT INTO `r_paas_almacenamiento` (`idPaaS`, `idAlmacenamiento`, `Cantidad`) VALUES
+(1, 4, 5);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `r_paas_cpu`
+--
+
+CREATE TABLE `r_paas_cpu` (
+  `idPaaS` int(11) NOT NULL,
+  `idCPU` int(11) NOT NULL,
+  `Cantidad` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -247,6 +340,25 @@ CREATE TABLE `r_paas_grup` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `r_paas_ram`
+--
+
+CREATE TABLE `r_paas_ram` (
+  `idPaaS` int(11) NOT NULL,
+  `idRAM` int(11) NOT NULL,
+  `Cantidad` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_paas_ram`
+--
+
+INSERT INTO `r_paas_ram` (`idPaaS`, `idRAM`, `Cantidad`) VALUES
+(1, 1, 3);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `r_saas_grup`
 --
 
@@ -254,6 +366,28 @@ CREATE TABLE `r_saas_grup` (
   `idSaaS` int(11) NOT NULL,
   `idGrup` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `r_usuario_grupo`
+--
+
+CREATE TABLE `r_usuario_grupo` (
+  `idUsuario` int(11) NOT NULL,
+  `idGrupo` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `r_usuario_grupo`
+--
+
+INSERT INTO `r_usuario_grupo` (`idUsuario`, `idGrupo`) VALUES
+(0, 4),
+(0, 5),
+(1, 3),
+(1, 4),
+(1, 6);
 
 -- --------------------------------------------------------
 
@@ -266,6 +400,16 @@ CREATE TABLE `r_usuario_org` (
   `idOrg` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `r_usuario_org`
+--
+
+INSERT INTO `r_usuario_org` (`idUsuario`, `idOrg`) VALUES
+(0, 5),
+(1, 3),
+(1, 4),
+(1, 5);
+
 -- --------------------------------------------------------
 
 --
@@ -277,7 +421,7 @@ CREATE TABLE `saas` (
   `Nombre` varchar(100) NOT NULL,
   `Usuario` varchar(50) DEFAULT NULL,
   `Contraseña` varchar(255) DEFAULT NULL,
-  `idPaaS` int(11) NULL
+  `idPaaS` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -335,7 +479,7 @@ INSERT INTO `trabajador` (`idTrabajador`, `idUsuario`) VALUES
 
 CREATE TABLE `usuario` (
   `idUsuario` int(11) NOT NULL,
-  `Nombre` varchar(100) DEFAULT NULL,
+  `Nombre` varchar(100) NOT NULL,
   `Usuario` varchar(50) NOT NULL,
   `Email` varchar(100) NOT NULL,
   `Telefono` varchar(15) DEFAULT NULL,
@@ -349,7 +493,8 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`idUsuario`, `Nombre`, `Usuario`, `Email`, `Telefono`, `Contraseña`, `Direccion`, `FechaRegistro`) VALUES
-(0, 'Xisco Gaya', 'xiiscogaya', 'xiiscogaya@hotmail.com', '62378348', '$2y$10$FBtDXX02Lg2QnzudJzqpauMCRejRwS3Gk1kJXYInc7JOHkErOHFeO', 'C de bunyola, 6', '2024-12-08 19:56:33');
+(0, 'Xisco Gaya', 'xiiscogaya', 'xiiscogaya@hotmail.com', '62378348', '$2y$10$FBtDXX02Lg2QnzudJzqpauMCRejRwS3Gk1kJXYInc7JOHkErOHFeO', 'C de bunyola, 6', '2024-12-08 19:56:33'),
+(1, 'Toni', 'tonii100', 'toni100@hotmail.com', '3784848983', '$2y$10$2HGueF9aisFDS7v3ZC72sOZ7HTajGS1DReQwW.kgTQrZuJrsA161y', 'Avinguda des Tren 20', '2024-12-09 21:21:32');
 
 --
 -- Índices para tablas volcadas
@@ -437,6 +582,20 @@ ALTER TABLE `r_grup_priv`
   ADD KEY `idPriv` (`idPriv`);
 
 --
+-- Indices de la tabla `r_paas_almacenamiento`
+--
+ALTER TABLE `r_paas_almacenamiento`
+  ADD PRIMARY KEY (`idPaaS`,`idAlmacenamiento`),
+  ADD KEY `idAlmacenamiento` (`idAlmacenamiento`);
+
+--
+-- Indices de la tabla `r_paas_cpu`
+--
+ALTER TABLE `r_paas_cpu`
+  ADD PRIMARY KEY (`idPaaS`,`idCPU`),
+  ADD KEY `idCPU` (`idCPU`);
+
+--
 -- Indices de la tabla `r_paas_grup`
 --
 ALTER TABLE `r_paas_grup`
@@ -444,11 +603,25 @@ ALTER TABLE `r_paas_grup`
   ADD KEY `idGrup` (`idGrup`);
 
 --
+-- Indices de la tabla `r_paas_ram`
+--
+ALTER TABLE `r_paas_ram`
+  ADD PRIMARY KEY (`idPaaS`,`idRAM`),
+  ADD KEY `idRAM` (`idRAM`);
+
+--
 -- Indices de la tabla `r_saas_grup`
 --
 ALTER TABLE `r_saas_grup`
   ADD PRIMARY KEY (`idSaaS`,`idGrup`),
   ADD KEY `idGrup` (`idGrup`);
+
+--
+-- Indices de la tabla `r_usuario_grupo`
+--
+ALTER TABLE `r_usuario_grupo`
+  ADD PRIMARY KEY (`idUsuario`,`idGrupo`),
+  ADD KEY `idGrupo` (`idGrupo`);
 
 --
 -- Indices de la tabla `r_usuario_org`
@@ -535,6 +708,20 @@ ALTER TABLE `r_grup_priv`
   ADD CONSTRAINT `r_grup_priv_ibfk_2` FOREIGN KEY (`idPriv`) REFERENCES `privilegio` (`idPrivilegio`);
 
 --
+-- Filtros para la tabla `r_paas_almacenamiento`
+--
+ALTER TABLE `r_paas_almacenamiento`
+  ADD CONSTRAINT `r_paas_almacenamiento_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_paas_almacenamiento_ibfk_2` FOREIGN KEY (`idAlmacenamiento`) REFERENCES `almacenamiento` (`idAlmacenamiento`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `r_paas_cpu`
+--
+ALTER TABLE `r_paas_cpu`
+  ADD CONSTRAINT `r_paas_cpu_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_paas_cpu_ibfk_2` FOREIGN KEY (`idCPU`) REFERENCES `cpu` (`idCPU`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `r_paas_grup`
 --
 ALTER TABLE `r_paas_grup`
@@ -542,11 +729,25 @@ ALTER TABLE `r_paas_grup`
   ADD CONSTRAINT `r_paas_grup_ibfk_2` FOREIGN KEY (`idGrup`) REFERENCES `grupo` (`idGrupo`) ON DELETE CASCADE;
 
 --
+-- Filtros para la tabla `r_paas_ram`
+--
+ALTER TABLE `r_paas_ram`
+  ADD CONSTRAINT `r_paas_ram_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_paas_ram_ibfk_2` FOREIGN KEY (`idRAM`) REFERENCES `ram` (`idRAM`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `r_saas_grup`
 --
 ALTER TABLE `r_saas_grup`
   ADD CONSTRAINT `r_saas_grup_ibfk_1` FOREIGN KEY (`idSaaS`) REFERENCES `saas` (`idSaaS`) ON DELETE CASCADE,
   ADD CONSTRAINT `r_saas_grup_ibfk_2` FOREIGN KEY (`idGrup`) REFERENCES `grupo` (`idGrupo`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `r_usuario_grupo`
+--
+ALTER TABLE `r_usuario_grupo`
+  ADD CONSTRAINT `r_usuario_grupo_ibfk_1` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE,
+  ADD CONSTRAINT `r_usuario_grupo_ibfk_2` FOREIGN KEY (`idGrupo`) REFERENCES `grupo` (`idGrupo`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `r_usuario_org`
