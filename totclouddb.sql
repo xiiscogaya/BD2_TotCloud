@@ -410,9 +410,14 @@ CREATE TABLE `saas` (
   `Nombre` varchar(100) NOT NULL,
   `Usuario` varchar(50) DEFAULT NULL,
   `Contraseña` varchar(255) DEFAULT NULL,
-  `idPaaS` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
+  `idPaaS` int(11) DEFAULT NULL,
+  `idMotor` int(11) DEFAULT NULL,
+  PRIMARY KEY (`idSaaS`),
+  KEY `idPaaS` (`idPaaS`),
+  KEY `idMotor` (`idMotor`),
+  CONSTRAINT `saas_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE SET NULL,
+  CONSTRAINT `saas_ibfk_2` FOREIGN KEY (`idMotor`) REFERENCES `motor` (`idMotor`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 -- --------------------------------------------------------
 
 --
