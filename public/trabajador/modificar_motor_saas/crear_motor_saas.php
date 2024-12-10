@@ -20,13 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message = 'Todos los campos son obligatorios.';
     } else {
         // Determinar el siguiente ID disponible para Motor
-        $query_next_id = "SELECT MIN(a.idMotor)+1 AS next_id FROM motor a LEFT JOIN motor b ON a.idMotor = b.idMotor-1 WHERE b.idMotor IS NULL";
+        $query_next_id = "SELECT COALESCE(MIN(a.idMotor)+1, 1) AS next_id FROM motor a LEFT JOIN motor b ON a.idMotor = b.idMotor-1 WHERE b.idMotor IS NULL";
         $result_next_id = $conn->query($query_next_id);
         $row_next_id = $result_next_id->fetch_assoc();
         $idMotor = $row_next_id['next_id'];
 
         // Crear Motor
-        $query_motor = "INSERT INTO motor (idMotor, Nombre, Version, PrecioHora) VALUES (?, ?, ?, ?)";
+        $query_motor = "INSERT INTO motor (idMotor, Nombre, Version, PrecioH) VALUES (?, ?, ?, ?)";
         $stmt_motor = $conn->prepare($query_motor);
         $stmt_motor->bind_param('issi', $idMotor, $nombre, $version, $precioH);    }
         if ($stmt_motor->execute()) {
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="alert alert-info text-center"><?php echo htmlspecialchars($message); ?></div>
         <?php endif; ?>
 
-        <form method="POST" action="crear_motor.php" class="mx-auto" style="max-width: 600px;">
+        <form method="POST" action="crear_motor_saas.php" class="mx-auto" style="max-width: 600px;">
             <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre</label>
                 <input type="text" class="form-control" id="nombre" name="nombre" required>

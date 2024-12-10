@@ -23,22 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Todos los campos son obligatorios y deben tener valores válidos.';
     } else {
         // Obtener el próximo ID consecutivo
-        $query_max_id = "SELECT COUNT(idCPU) + 1 AS next_id FROM cpu";
+        $query_max_id = "SELECT COALESCE(MIN(a.idCPU)+1, 1) AS next_id FROM cpu a LEFT JOIN cpu b ON a.idCPU = b.idCPU-1 WHERE b.idCPU IS NULL";
         $result = $conn->query($query_max_id);
         $next_id = $result->fetch_assoc()['next_id'];
-
-        // Verificar si el ID ya existe (para evitar conflictos en caso de eliminación)
-        while (true) {
-            $query_check_id = "SELECT idCPU FROM cpu WHERE idCPU = ?";
-            $stmt_check = $conn->prepare($query_check_id);
-            $stmt_check->bind_param('i', $next_id);
-            $stmt_check->execute();
-            $stmt_check->store_result();
-            if ($stmt_check->num_rows === 0) {
-                break; // Si no existe, este ID es válido
-            }
-            $next_id++; // Incrementar ID si ya existe
-        }
 
         // Insertar la nueva CPU con el ID generado
         $query = "INSERT INTO cpu (idCPU, Nombre, Fabricante, Arquitectura, Nucleos, Frecuencia, PrecioH, Cantidad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";

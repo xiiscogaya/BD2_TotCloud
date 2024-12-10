@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Todos los campos son obligatorios y deben tener valores válidos.';
     } else {
         // Obtener el próximo ID consecutivo
-        $query_max_id = "SELECT COUNT(idRAM) + 1 AS next_id FROM ram";
+        $query_max_id = "SELECT COALESCE(MIN(a.idRAM)+1, 0) AS next_id FROM ram a LEFT JOIN ram b ON a.idRAM = b.idRAM-1 WHERE b.idRAM IS NULL";
         $result = $conn->query($query_max_id);
         $next_id = $result->fetch_assoc()['next_id'];
 

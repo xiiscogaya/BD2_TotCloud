@@ -421,7 +421,8 @@ CREATE TABLE `saas` (
   `Nombre` varchar(100) NOT NULL,
   `Usuario` varchar(50) DEFAULT NULL,
   `Contraseña` varchar(255) DEFAULT NULL,
-  `idPaaS` int(11) DEFAULT NULL
+  `idPaaS` int(11) DEFAULT NULL,
+  `idMotor` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -636,6 +637,7 @@ ALTER TABLE `r_usuario_org`
 ALTER TABLE `saas`
   ADD PRIMARY KEY (`idSaaS`),
   ADD KEY `idPaaS` (`idPaaS`);
+  ADD KEY `idMotor` (`idMotor`);
 
 --
 -- Indices de la tabla `sistemaoperativo`
@@ -761,6 +763,7 @@ ALTER TABLE `r_usuario_org`
 --
 ALTER TABLE `saas`
   ADD CONSTRAINT `saas_ibfk_1` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE SET NULL;
+  ADD CONSTRAINT `saas_ibfk_2` FOREIGN KEY (`idMotor`) REFERENCES `motor` (`idMotor`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `trabajador`

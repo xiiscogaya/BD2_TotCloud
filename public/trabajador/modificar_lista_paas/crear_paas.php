@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $message = 'La cantidad seleccionada de CPU o RAM excede el stock disponible.';
         } else {
             // Determinar el siguiente ID disponible para PaaS
-            $query_next_id = "SELECT COALESCE(MAX(idPaaS), 0) + 1 AS next_id FROM paas";
+            $query_next_id = "SELECT COALESCE(MIN(a.idPaaS)+1, 1) AS next_id FROM paas a LEFT JOIN paas b ON a.idPaaS = b.idPaaS-1 WHERE b.idPaaS IS NULL";
             $result_next_id = $conn->query($query_next_id);
             $idPaaS = $result_next_id->fetch_assoc()['next_id'];
 
