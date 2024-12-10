@@ -21,6 +21,14 @@ if (isset($_SESSION['success_message'])) {
     $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']); // Eliminar mensaje para evitar que se muestre de nuevo
 }
+
+// Mostrar mensaje de remove si existe
+$success_message_remove = '';
+if (isset($_SESSION['success_message_remove'])) {
+    $success_message = $_SESSION['success_message_remove'];
+    unset($_SESSION['success_message_remove']); // Eliminar mensaje para evitar que se muestre de nuevo
+}
+
 // Mostrar mensaje de exito al eliminar motor si existe
 $error_message = '';
 if (isset($_SESSION['error_message'])) {
@@ -79,10 +87,10 @@ $result = $conn->query($query);
         </div>
     <?php endif; ?>
 
-    <!-- Mostrar mensaje de cambios realizdos -->
-     <?php if (!empty($success_message)): ?>
+    <!-- Mostrar mensaje de eliminacion realizda -->
+     <?php if (!empty($success_message_remove)): ?>
         <div class="alert alert-danger text-center">
-            <?php echo htmlspecialchars($success_message); ?>
+            <?php echo htmlspecialchars($success_message_remove); ?>
         </div>
     <?php endif; ?>
 
@@ -123,8 +131,8 @@ $result = $conn->query($query);
                         <td><?php echo htmlspecialchars($row['Version']); ?></td>
                         <td><?php echo htmlspecialchars($row['PrecioH']); ?></td>
                         <td>
-                            <a href="editar_motor.php?id=<?php echo $row['idMotor']; ?>" class="btn btn-primary btn-sm">Editar</a>
-                            <a href="eliminar_motor.php?id=<?php echo $row['idMotor']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar este motor?')">Eliminar</a>
+                            <a href="editar_motor_saas.php?id=<?php echo $row['idMotor']; ?>" class="btn btn-primary btn-sm">Editar</a>
+                            <a href="eliminar_motor_saas.php?id=<?php echo $row['idMotor']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar este motor?')">Eliminar</a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
