@@ -89,7 +89,7 @@ if ($worker_result->num_rows === 0) {
                     <div class="card-body text-center">
                         <h5 class="card-title">Ver Mis Organizaciones</h5>
                         <p class="card-text">Consulta las organizaciones asociadas a este usuario.</p>
-                        <a href="ver_organizaciones.php" class="btn btn-primary">Ver Organizaciones</a>
+                        <a href="../usuario/usuario.php" class="btn btn-primary">Ver Organizaciones</a>
                     </div>
                 </div>
             </div>

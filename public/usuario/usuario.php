@@ -125,7 +125,7 @@ $result = $stmt->get_result();
                         <td><?php echo htmlspecialchars($organizacion['Nombre']); ?></td>
                         <td><?php echo htmlspecialchars($organizacion['Descripcion']); ?></td>
                         <td>
-                            <a href="ver_organizacion.php?id=<?php echo $organizacion['idOrganizacion']; ?>" class="btn btn-primary btn-sm">Ver</a>
+                            <a href="organizaciones/ver_organizacion.php?id=<?php echo $organizacion['idOrganizacion']; ?>" class="btn btn-primary btn-sm">Ver</a>
                             <a href="usuario.php?eliminar=<?php echo $organizacion['idOrganizacion']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta organización?')">Eliminar</a>
                         </td>
                     </tr>
