@@ -28,6 +28,17 @@ if ($result_check->num_rows === 0) {
     header('Location: ../../usuario.php');
     exit;
 }
+
+// Obtener usuarios que ya están en la organización
+$query_users_in_org = "
+    SELECT u.idUsuario, u.Nombre, u.Email 
+    FROM usuario u
+    JOIN r_usuario_org ruo ON u.idUsuario = ruo.idUsuario
+    WHERE ruo.idOrg = ?";
+$stmt_users_in_org = $conn->prepare($query_users_in_org);
+$stmt_users_in_org->bind_param('i', $idOrganizacion);
+$stmt_users_in_org->execute();
+$result_users_in_org = $stmt_users_in_org->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -43,7 +54,7 @@ if ($result_check->num_rows === 0) {
     <!-- Encabezado -->
     <header class="bg-primary text-white d-flex justify-content-between align-items-center p-3">
         <div>
-            <h1 class="h3 mb-0">Añadir Usuarios a Organización</h1>
+            <h1 class="h3 mb-0">Gestión de Usuarios de la Organización</h1>
         </div>
         <div>
             <a href="../ver_organizacion.php?id=<?php echo $idOrganizacion; ?>" class="btn btn-outline-light">Volver a Organización</a>
@@ -52,8 +63,8 @@ if ($result_check->num_rows === 0) {
 
     <!-- Contenido principal -->
     <main class="container my-5">
-        <h2 class="text-center mb-4">Buscar Usuarios</h2>
-
+        <!-- Sección para buscar y añadir usuarios -->
+        <h2 class="text-center mb-4">Buscar Usuarios para Añadir</h2>
         <div class="mb-3">
             <label for="search" class="form-label">Buscar por Nombre</label>
             <input type="text" class="form-control" id="search" placeholder="Escribe el nombre del usuario">
@@ -62,30 +73,41 @@ if ($result_check->num_rows === 0) {
         <div id="results" class="mt-4">
             <!-- Aquí se mostrarán los resultados de búsqueda -->
         </div>
+
+        <!-- Sección para listar usuarios en la organización -->
+        <h2 class="text-center my-5">Usuarios en la Organización</h2>
+        <form id="updateUsersForm">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Seleccionar</th>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($user = $result_users_in_org->fetch_assoc()): ?>
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="usuarios[]" value="<?php echo $user['idUsuario']; ?>" checked>
+                            </td>
+                            <td><?php echo htmlspecialchars($user['idUsuario']); ?></td>
+                            <td><?php echo htmlspecialchars($user['Nombre']); ?></td>
+                            <td><?php echo htmlspecialchars($user['Email']); ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+            <button type="submit" class="btn btn-danger">Actualizar Usuarios</button>
+        </form>
     </main>
 
     <!-- Pie de página -->
     <?php include '../../../../includes/footer.php'; ?>
 
     <script>
-        $(document).ready(function () {
-            $('#search').on('input', function () {
-                const query = $(this).val();
-                if (query.length > 2) { // Iniciar búsqueda después de 3 caracteres
-                    $.ajax({
-                        url: 'buscar_usuario.php',
-                        method: 'POST',
-                        data: { search: query, idOrg: <?php echo $idOrganizacion; ?> },
-                        success: function (data) {
-                            $('#results').html(data);
-                        }
-                    });
-                } else {
-                    $('#results').html('');
-                }
-            });
-        });
-
+        // Definir la función addUser() en el ámbito global
         function addUser(userId) {
             const orgId = <?php echo $idOrganizacion; ?>;
             $.ajax({
@@ -98,6 +120,40 @@ if ($result_check->num_rows === 0) {
                 }
             });
         }
+
+        $(document).ready(function () {
+            // Buscar usuarios
+            $('#search').on('input', function () {
+                const query = $(this).val();
+                if (query.length > 2) {
+                    $.ajax({
+                        url: 'buscar_usuario.php',
+                        method: 'POST',
+                        data: { search: query, idOrg: <?php echo $idOrganizacion; ?> },
+                        success: function (data) {
+                            $('#results').html(data);
+                        }
+                    });
+                } else {
+                    $('#results').html('');
+                }
+            });
+
+            // Actualizar usuarios en la organización
+            $('#updateUsersForm').on('submit', function (e) {
+                e.preventDefault();
+                const formData = $(this).serialize();
+                $.ajax({
+                    url: 'actualizar_usuarios_org.php',
+                    method: 'POST',
+                    data: formData + '&idOrg=<?php echo $idOrganizacion; ?>',
+                    success: function (response) {
+                        alert(response);
+                        location.reload(); // Recargar la página después de actualizar
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

@@ -8,27 +8,26 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Mostrar mensaje de éxito al crear paas
+// Mostrar mensaje de éxito al crear PaaS
 $success_message_crear = '';
 if (isset($_SESSION['success_message_crear'])) {
-    $success_message = $_SESSION['success_message_crear'];
+    $success_message_crear = $_SESSION['success_message_crear'];
     unset($_SESSION['success_message_crear']); // Eliminar mensaje para evitar que se muestre de nuevo
 }
 
-// Mostrar mensaje de éxito al editar paas si existe
+// Mostrar mensaje de éxito al editar PaaS si existe
 $success_message = '';
 if (isset($_SESSION['success_message'])) {
     $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']); // Eliminar mensaje para evitar que se muestre de nuevo
 }
-// Mostrar mensaje de éxito al eliminar el paas si existe
+
+// Mostrar mensaje de error si existe
 $error_message = '';
 if (isset($_SESSION['error_message'])) {
     $error_message = $_SESSION['error_message'];
     unset($_SESSION['error_message']); // Eliminar el mensaje después de mostrarlo
 }
-
-
 
 // Obtener todas las configuraciones PaaS
 $query = "SELECT * FROM paas";
@@ -37,7 +36,7 @@ $result = $conn->query($query);
 // Manejar cambios de estado
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['estado'])) {
     $idPaaS = intval($_POST['idPaaS']);
-    $estado = $_POST['estado'] === 'Activo' ? 'Activo' : 'En pruebas';
+    $estado = $_POST['estado'] === 'Disponible' ? 'Disponible' : 'En pruebas';
 
     $update_query = "UPDATE paas SET Estado = ? WHERE idPaaS = ?";
     $stmt = $conn->prepare($update_query);
@@ -57,9 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modificar Lista PaaS - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Archivo de estilos personalizados -->
     <link href="../../css/estilos.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         .slider-container {
             display: flex;
@@ -77,26 +76,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
         <h1>Modificar Lista PaaS</h1>
     </header>
 
-    <!-- Botón de Volver a Trabajador -->
+    <!-- Botón de Volver -->
     <div class="container my-3">
         <a href="../trabajador.php" class="btn btn-secondary">Volver</a>
     </div>
 
-    <!-- Mostrar mensaje de exito al crear paas -->
+    <!-- Mostrar mensajes de éxito y error -->
     <?php if (!empty($success_message_crear)): ?>
         <div class="alert alert-success text-center">
             <?php echo htmlspecialchars($success_message_crear); ?>
         </div>
     <?php endif; ?>
 
-    <!-- Mostrar mensaje de cambios realizados -->
     <?php if (!empty($success_message)): ?>
         <div class="alert alert-success text-center">
             <?php echo htmlspecialchars($success_message); ?>
         </div>
     <?php endif; ?>
 
-    <!-- Mostrar mensaje de éxito al eliminar paas -->
     <?php if (!empty($error_message)): ?>
         <div class="alert alert-danger text-center">
             <?php echo htmlspecialchars($error_message); ?>
@@ -119,7 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
                         <th>ID</th>
                         <th>Nombre</th>
                         <th>Estado</th>
-                        <th>Sistema Operativo</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -132,8 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
                                 <a href="#" class="text-primary" data-bs-toggle="modal" data-bs-target="#detailsModal" 
                                     data-id="<?php echo $row['idPaaS']; ?>"
                                     data-nombre="<?php echo htmlspecialchars($row['Nombre']); ?>"
-                                    data-estado="<?php echo htmlspecialchars($row['Estado']); ?>"
-                                    data-sistema="<?php echo htmlspecialchars($row['idSO']); ?>">
+                                    data-estado="<?php echo htmlspecialchars($row['Estado']); ?>">
                                     <?php echo htmlspecialchars($row['Nombre']); ?>
                                 </a>
                             </td>
@@ -141,7 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
                                 <!-- Slider para cambiar estado -->
                                 <form method="POST" action="modificar_paas.php" class="slider-container">
                                     <input type="hidden" name="idPaaS" value="<?php echo $row['idPaaS']; ?>">
-                                    <!-- Campo oculto para estado "En pruebas" -->
                                     <input type="hidden" name="estado" value="En pruebas">
                                     <span class="slider-label">En pruebas</span>
                                     <label class="form-check form-switch">
@@ -149,15 +143,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
                                             class="form-check-input" 
                                             type="checkbox" 
                                             name="estado" 
-                                            value="Activo" 
+                                            value="Disponible" 
                                             onchange="this.form.submit()"
-                                            <?php echo $row['Estado'] === 'Activo' ? 'checked' : ''; ?>
+                                            <?php echo $row['Estado'] === 'Disponible' ? 'checked' : ''; ?>
                                         >
                                     </label>
-                                    <span class="slider-label">Activo</span>
+                                    <span class="slider-label">Disponible</span>
                                 </form>
                             </td>
-                            <td><?php echo htmlspecialchars($row['idSO']); ?></td>
                             <td>
                                 <a href="editar_paas.php?id=<?php echo $row['idPaaS']; ?>" class="btn btn-primary btn-sm">Editar</a>
                                 <a href="eliminar_paas.php?id=<?php echo $row['idPaaS']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta configuración PaaS?')">Eliminar</a>
@@ -182,7 +175,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
                 <div class="modal-body">
                     <h6><strong>Nombre:</strong> <span id="modalNombre"></span></h6>
                     <h6><strong>Estado:</strong> <span id="modalEstado"></span></h6>
-                    <h6><strong>Sistema Operativo:</strong> <span id="modalSistema"></span></h6>
                     <hr>
                     <h6><strong>Componentes:</strong></h6>
                     <ul id="modalComponentes"></ul>
@@ -204,12 +196,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
             const idPaaS = button.getAttribute('data-id');
             const nombre = button.getAttribute('data-nombre');
             const estado = button.getAttribute('data-estado');
-            const sistema = button.getAttribute('data-sistema');
 
             // Actualizar datos básicos en el modal
             document.getElementById('modalNombre').textContent = nombre;
             document.getElementById('modalEstado').textContent = estado;
-            document.getElementById('modalSistema').textContent = sistema;
 
             // Fetch de componentes asociados
             fetch(`get_paas_details.php?id=${idPaaS}`)

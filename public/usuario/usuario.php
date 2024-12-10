@@ -14,33 +14,25 @@ $user_id = $_SESSION['user_id'];
 if (isset($_GET['eliminar'])) {
     $idOrganizacion = intval($_GET['eliminar']);
     
-    // Verificar que la organización pertenece al usuario
-    $check_query = "SELECT * FROM r_usuario_org WHERE idUsuario = ? AND idOrg = ?";
+    // Verificar que la organización pertenece al usuario como creador
+    $check_query = "SELECT * FROM organizacion WHERE idOrganizacion = ? AND idCreador = ?";
     $stmt_check = $conn->prepare($check_query);
-    $stmt_check->bind_param('ii', $user_id, $idOrganizacion);
+    $stmt_check->bind_param('ii', $idOrganizacion, $user_id);
     $stmt_check->execute();
     $result_check = $stmt_check->get_result();
 
     if ($result_check->num_rows > 0) {
         // Eliminar la relación entre usuario y organización
-        $delete_relation_query = "DELETE FROM r_usuario_org WHERE idUsuario = ? AND idOrg = ?";
+        $delete_relation_query = "DELETE FROM r_usuario_org WHERE idOrg = ?";
         $stmt_delete_relation = $conn->prepare($delete_relation_query);
-        $stmt_delete_relation->bind_param('ii', $user_id, $idOrganizacion);
+        $stmt_delete_relation->bind_param('i', $idOrganizacion);
         $stmt_delete_relation->execute();
 
-        // Eliminar la organización (solo si no está relacionada con otros usuarios)
-        $check_org_query = "SELECT * FROM r_usuario_org WHERE idOrg = ?";
-        $stmt_check_org = $conn->prepare($check_org_query);
-        $stmt_check_org->bind_param('i', $idOrganizacion);
-        $stmt_check_org->execute();
-        $result_org_check = $stmt_check_org->get_result();
-
-        if ($result_org_check->num_rows === 0) {
-            $delete_org_query = "DELETE FROM organizacion WHERE idOrganizacion = ?";
-            $stmt_delete_org = $conn->prepare($delete_org_query);
-            $stmt_delete_org->bind_param('i', $idOrganizacion);
-            $stmt_delete_org->execute();
-        }
+        // Eliminar la organización
+        $delete_org_query = "DELETE FROM organizacion WHERE idOrganizacion = ?";
+        $stmt_delete_org = $conn->prepare($delete_org_query);
+        $stmt_delete_org->bind_param('i', $idOrganizacion);
+        $stmt_delete_org->execute();
 
         $_SESSION['success_message'] = 'La organización se eliminó correctamente.';
     } else {
@@ -52,16 +44,16 @@ if (isset($_GET['eliminar'])) {
 }
 
 // Obtener las organizaciones asociadas al usuario
-$query = "SELECT o.idOrganizacion, o.Nombre, o.Descripcion 
-          FROM organizacion o 
-          JOIN r_usuario_org r ON o.idOrganizacion = r.idOrg 
-          WHERE r.idUsuario = ?";
+$query = "
+    SELECT o.idOrganizacion, o.Nombre, o.Descripcion, o.idCreador 
+    FROM organizacion o 
+    JOIN r_usuario_org r ON o.idOrganizacion = r.idOrg 
+    WHERE r.idUsuario = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
@@ -71,8 +63,6 @@ $result = $stmt->get_result();
     <title>Mis Organizaciones - TotCloud</title>
     <link href="../css/estilos.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Archivo de estilos personalizados -->
-    <link href="../css/estilos.css" rel="stylesheet">
 </head>
 <body>
     <!-- Encabezado -->
@@ -90,17 +80,16 @@ $result = $stmt->get_result();
     <main class="container my-5">
         <?php if (!empty($_SESSION['success_message'])): ?>
             <div class="alert alert-success">
-                <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
+                <?php echo htmlspecialchars($_SESSION['success_message']); unset($_SESSION['success_message']); ?>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($_SESSION['error_message'])): ?>
             <div class="alert alert-danger">
-                <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
+                <?php echo htmlspecialchars($_SESSION['error_message']); unset($_SESSION['error_message']); ?>
             </div>
         <?php endif; ?>
 
-        
         <h2 class="text-center">Lista de Organizaciones</h2>
 
         <!-- Botón para añadir nueva organización -->
@@ -126,7 +115,9 @@ $result = $stmt->get_result();
                         <td><?php echo htmlspecialchars($organizacion['Descripcion']); ?></td>
                         <td>
                             <a href="organizaciones/ver_organizacion.php?id=<?php echo $organizacion['idOrganizacion']; ?>" class="btn btn-primary btn-sm">Ver</a>
-                            <a href="usuario.php?eliminar=<?php echo $organizacion['idOrganizacion']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta organización?')">Eliminar</a>
+                            <?php if ($organizacion['idCreador'] == $user_id): ?>
+                                <a href="usuario.php?eliminar=<?php echo $organizacion['idOrganizacion']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta organización?')">Eliminar</a>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile; ?>
