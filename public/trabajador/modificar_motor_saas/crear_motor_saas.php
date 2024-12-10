@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../../includes/db_connect.php'; // Conexión a la base de datos
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
