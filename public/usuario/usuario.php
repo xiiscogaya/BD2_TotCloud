@@ -10,6 +10,17 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Verificar si el usuario es un trabajador
+$isTrabajador = false;
+$check_trabajador_query = "SELECT * FROM trabajador WHERE idUsuario = ?";
+$stmt_trabajador = $conn->prepare($check_trabajador_query);
+$stmt_trabajador->bind_param('i', $user_id);
+$stmt_trabajador->execute();
+$result_trabajador = $stmt_trabajador->get_result();
+if ($result_trabajador->num_rows > 0) {
+    $isTrabajador = true;
+}
+
 // Manejar la eliminación si se recibe un parámetro "eliminar"
 if (isset($_GET['eliminar'])) {
     $idOrganizacion = intval($_GET['eliminar']);
@@ -72,6 +83,9 @@ $result = $stmt->get_result();
             <p>Bienvenido, <?php echo htmlspecialchars($_SESSION['user_name']); ?></p>
         </div>
         <div>
+            <?php if ($isTrabajador): ?>
+                <a href="../trabajador/trabajador.php" class="btn btn-warning">Panel de Trabajador</a>
+            <?php endif; ?>
             <a href="../logout.php" class="btn btn-outline-light">Cerrar Sesión</a>
         </div>
     </header>
