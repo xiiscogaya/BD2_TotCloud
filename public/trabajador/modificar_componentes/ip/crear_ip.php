@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Todos los campos son obligatorios y deben tener valores válidos.';
     } else {
         // Generar el próximo ID consecutivo
-        $query_max_id = "SELECT COALESCE(MIN(a.idIp)+1, 0) AS next_id FROM direccionip a LEFT JOIN direccionip b ON a.idIp = b.idIp-1 WHERE b.idIp IS NULL";
+        $query_max_id = "SELECT COALESCE(MIN(a.idIp)+1, 1) AS next_id FROM direccionip a LEFT JOIN direccionip b ON a.idIp = b.idIp-1 WHERE b.idIp IS NULL";
         $result = $conn->query($query_max_id);
         $next_id = $result->fetch_assoc()['next_id'];
 

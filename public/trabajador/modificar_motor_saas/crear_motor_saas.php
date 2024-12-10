@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message = 'Todos los campos son obligatorios.';
     } else {
         // Determinar el siguiente ID disponible para Motor
-        $query_next_id = "SELECT COALESCE(MIN(a.idMotor)+1, 0) AS next_id FROM motor a LEFT JOIN motor b ON a.idMotor = b.idMotor-1 WHERE b.idMotor IS NULL";
+        $query_next_id = "SELECT COALESCE(MIN(a.idMotor)+1, 1) AS next_id FROM motor a LEFT JOIN motor b ON a.idMotor = b.idMotor-1 WHERE b.idMotor IS NULL";
         $result_next_id = $conn->query($query_next_id);
         $row_next_id = $result_next_id->fetch_assoc();
         $idMotor = $row_next_id['next_id'];

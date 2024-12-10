@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = 'El nombre de usuario o el correo electrónico ya están registrados.';
         } else {
             // Obtener el próximo ID disponible para el usuario
-            $query_next_id = "SELECT COALESCE(MIN(a.idUsuario)+1, 0) AS next_id FROM usuario a LEFT JOIN usuario b ON a.idUsuario = b.idUsuario-1 WHERE b.idUsuario IS NULL";
+            $query_next_id = "SELECT COALESCE(MIN(a.idUsuario)+1, 1) AS next_id FROM usuario a LEFT JOIN usuario b ON a.idUsuario = b.idUsuario-1 WHERE b.idUsuario IS NULL";
             $result_next_id = $conn->query($query_next_id);
             $next_id = $result_next_id->fetch_assoc()['next_id'];
 
