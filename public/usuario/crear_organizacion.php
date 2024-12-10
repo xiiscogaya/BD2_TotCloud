@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $error = ''; // Inicializar el mensaje de error
-$success = ''; // Inicializar el mensaje de éxito
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Obtener y sanitizar datos del formulario
@@ -21,25 +20,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'El nombre de la organización es obligatorio.';
     } else {
         // Generar el próximo ID disponible para la organización
-        $query_next_id = "SELECT COALESCE(MAX(idOrganizacion), 0) + 1 AS next_id FROM organizacion";
-        $result_next_id = $conn->query($query_next_id);
-        $next_id = $result_next_id->fetch_assoc()['next_id'];
+        $query_next_org_id = "SELECT COALESCE(MAX(idOrganizacion), 0) + 1 AS next_id FROM organizacion";
+        $result_next_org_id = $conn->query($query_next_org_id);
+        $next_org_id = $result_next_org_id->fetch_assoc()['next_id'];
 
         // Insertar la nueva organización
-        $insert_query = "INSERT INTO organizacion (idOrganizacion, Nombre, Descripcion, idCreador) VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($insert_query);
-        $stmt->bind_param('issi', $next_id, $nombre, $descripcion, $idCreador);
+        $insert_org_query = "INSERT INTO organizacion (idOrganizacion, Nombre, Descripcion, idCreador) VALUES (?, ?, ?, ?)";
+        $stmt = $conn->prepare($insert_org_query);
+        $stmt->bind_param('issi', $next_org_id, $nombre, $descripcion, $idCreador);
 
         if ($stmt->execute()) {
             // Vincular al usuario con la organización en la tabla r_usuario_org
-            $link_query = "INSERT INTO r_usuario_org (idUsuario, idOrg) VALUES (?, ?)";
-            $stmt_link = $conn->prepare($link_query);
-            $stmt_link->bind_param('ii', $idCreador, $next_id);
+            $link_org_query = "INSERT INTO r_usuario_org (idUsuario, idOrg) VALUES (?, ?)";
+            $stmt_link_org = $conn->prepare($link_org_query);
+            $stmt_link_org->bind_param('ii', $idCreador, $next_org_id);
 
-            if ($stmt_link->execute()) {
-                $_SESSION['success_message'] = 'Organización creada exitosamente.';
-                header('Location: usuario.php');
-                exit;
+            if ($stmt_link_org->execute()) {
+                // Generar el próximo ID disponible para el grupo
+                $query_next_group_id = "SELECT COALESCE(MAX(idGrupo), 0) + 1 AS next_id FROM grupo";
+                $result_next_group_id = $conn->query($query_next_group_id);
+                $next_group_id = $result_next_group_id->fetch_assoc()['next_id'];
+
+                // Crear un grupo "admin" asociado a la nueva organización
+                $insert_group_query = "INSERT INTO grupo (idGrupo, Nombre, Descripcion, idOrg) VALUES (?, 'admin', 'Grupo con todos los permisos', ?)";
+                $stmt_group = $conn->prepare($insert_group_query);
+                $stmt_group->bind_param('ii', $next_group_id, $next_org_id);
+
+                if ($stmt_group->execute()) {
+                    // Obtener todos los privilegios disponibles
+                    $privileges_query = "SELECT Nombre FROM privilegio";
+                    $privileges_result = $conn->query($privileges_query);
+
+                    $all_privileges_added = true;
+                    while ($privilege = $privileges_result->fetch_assoc()) {
+                        // Insertar cada privilegio en r_grup_priv para el grupo "admin"
+                        $insert_priv_query = "INSERT INTO r_grup_priv (idGrup, idPriv) VALUES (?, ?)";
+                        $stmt_priv = $conn->prepare($insert_priv_query);
+                        $stmt_priv->bind_param('is', $next_group_id, $privilege['Nombre']);
+
+                        if (!$stmt_priv->execute()) {
+                            $all_privileges_added = false;
+                            break;
+                        }
+                    }
+
+                    if ($all_privileges_added) {
+                        $_SESSION['success_message'] = 'Organización y grupo "admin" creados exitosamente.';
+                        header('Location: usuario.php');
+                        exit;
+                    } else {
+                        $error = 'Error al asignar privilegios al grupo admin.';
+                    }
+                } else {
+                    $error = 'Error al crear el grupo admin para la organización.';
+                }
             } else {
                 $error = 'Error al vincular la organización con el usuario.';
             }
@@ -87,13 +121,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <!-- Mostrar mensaje de éxito -->
-        <?php if ($success): ?>
-            <div class="alert alert-success text-center">
-                <?php echo htmlspecialchars($success); ?>
-            </div>
-        <?php endif; ?>
-
         <!-- Formulario para crear organización -->
         <form method="POST" action="crear_organizacion.php" class="mx-auto" style="max-width: 600px;">
             <div class="mb-3">
@@ -106,7 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <button type="submit" class="btn btn-primary w-100">Crear Organización</button>
         </form>
-
     </main>
 
     <!-- Pie de página -->
