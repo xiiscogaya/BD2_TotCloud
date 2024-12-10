@@ -26,22 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Todos los campos son obligatorios y deben tener valores válidos.';
     } else {
         // Obtener el próximo ID consecutivo
-        $query_max_id = "SELECT COUNT(idAlmacenamiento) + 1 AS next_id FROM almacenamiento";
+        $query_max_id = "SELECT COALESCE(MIN(a.idAlmacenamiento)+1, 0) AS next_id FROM almacenamiento a LEFT JOIN almacenamiento b ON a.idAlmacenamiento = b.idAlmacenamiento-1 WHERE b.idAlmacenamiento IS NULL";
         $result = $conn->query($query_max_id);
         $next_id = $result->fetch_assoc()['next_id'];
-
-        // Verificar si el ID ya existe (para evitar conflictos en caso de eliminación)
-        while (true) {
-            $query_check_id = "SELECT idAlmacenamiento FROM almacenamiento WHERE idAlmacenamiento = ?";
-            $stmt_check = $conn->prepare($query_check_id);
-            $stmt_check->bind_param('i', $next_id);
-            $stmt_check->execute();
-            $stmt_check->store_result();
-            if ($stmt_check->num_rows === 0) {
-                break; // Si no existe, este ID es válido
-            }
-            $next_id++; // Incrementar ID si ya existe
-        }
 
         // Insertar el nuevo almacenamiento con el ID generado
         $query = "INSERT INTO almacenamiento (idAlmacenamiento, Nombre, Tipo, VelocidadLectura, VelocidadEscritura, Capacidad, PrecioH, Cantidad) 

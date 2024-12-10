@@ -18,22 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Todos los campos son obligatorios y deben tener valores válidos.';
     } else {
         // Generar el próximo ID consecutivo
-        $query_max_id = "SELECT COUNT(idIp) + 1 AS next_id FROM direccionip";
+        $query_max_id = "SELECT COALESCE(MIN(a.idIp)+1, 0) AS next_id FROM direccionip a LEFT JOIN direccionip b ON a.idIp = b.idIp-1 WHERE b.idIp IS NULL";
         $result = $conn->query($query_max_id);
         $next_id = $result->fetch_assoc()['next_id'];
-
-        // Verificar que no exista una IP con el mismo ID (por si hubo eliminaciones)
-        while (true) {
-            $query_check = "SELECT idIp FROM direccionip WHERE idIp = ?";
-            $stmt_check = $conn->prepare($query_check);
-            $stmt_check->bind_param('i', $next_id);
-            $stmt_check->execute();
-            $stmt_check->store_result();
-            if ($stmt_check->num_rows === 0) {
-                break; // ID válido si no existe
-            }
-            $next_id++;
-        }
 
         // Insertar la nueva IP
         $query_insert = "INSERT INTO direccionip (idIp, Direccion, PrecioH, idPaaS) VALUES (?, ?, ?, NULL)";
