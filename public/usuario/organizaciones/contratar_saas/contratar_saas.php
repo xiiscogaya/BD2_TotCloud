@@ -54,6 +54,7 @@ $query_paas = "
     WHERE g.idOrg = ? AND p.Estado = 'Activo'
     GROUP BY p.idPaaS
 ";
+
 $stmt_paas = $conn->prepare($query_paas);
 $stmt_paas->bind_param('i', $idOrganizacion);
 $stmt_paas->execute();
@@ -72,17 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $conn->begin_transaction();
         try {
+            // Obtener el siguiente ID para el SaaS
+            $query_next_id = "SELECT COALESCE(MIN(a.idSaaS)+1, 1) AS next_id FROM saas a LEFT JOIN saas b ON a.idSaaS = b.idSaaS-1 WHERE b.idSaas IS NULL";
+            $result_next_id = $conn->query($query_next_id);
+            $row_next_id = $result_next_id->fetch_assoc();
+            $next_id = $row_next_id['next_id'];
+
+            // Hash de la contraseña
+            $hashed_password = password_hash($contrasena, PASSWORD_DEFAULT);
+
             // Crear la instancia SaaS
-            $query_create_saas = "INSERT INTO saas (Nombre, Usuario, Contraseña, idPaaS, idMotor) VALUES (?, ?, ?, ?, ?)";
+            $query_create_saas = "INSERT INTO saas (idSaaS, Nombre, Usuario, Contraseña, idPaaS, idMotor) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt_create_saas = $conn->prepare($query_create_saas);
-            $stmt_create_saas->bind_param('sssii', $nombre_saas, $usuario_saas, $contrasena, $idPaaS, $idMotor);
+            $stmt_create_saas->bind_param('isssii', $next_id, $nombre_saas, $usuario_saas, $hashed_password, $idPaaS, $idMotor);
 
             if (!$stmt_create_saas->execute()) {
                 throw new Exception('Error al contratar el SaaS.');
             }
-
-            // Obtener el idSaaS recién creado
-            $idSaaS = $conn->insert_id;
 
             // Asociar el SaaS con el grupo admin de la organización
             $query_get_admin_group = "SELECT idGrupo FROM grupo WHERE idOrg = ? AND Nombre = 'admin'";
@@ -97,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $insert_relation = "INSERT INTO r_saas_grup (idSaaS, idGrup) VALUES (?, ?)";
                 $stmt_relation = $conn->prepare($insert_relation);
-                $stmt_relation->bind_param('ii', $idSaaS, $idAdminGroup);
+                $stmt_relation->bind_param('ii', $next_id, $idAdminGroup);
                 if (!$stmt_relation->execute()) {
                     throw new Exception('Error al asociar el SaaS con el grupo admin.');
                 }
