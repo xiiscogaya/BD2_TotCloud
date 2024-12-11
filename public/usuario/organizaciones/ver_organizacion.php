@@ -39,7 +39,7 @@ $org = $stmt_org->get_result()->fetch_assoc();
 
 // Obtener los privilegios del usuario en esta organización
 $query_privileges = "
-    SELECT p.Nombre 
+    SELECT DISTINCT p.Nombre 
     FROM privilegio p
     JOIN r_grup_priv rgp ON p.idPrivilegio = rgp.idPriv
     JOIN grupo g ON rgp.idGrup = g.idGrupo
@@ -56,18 +56,24 @@ while ($privilege = $result_privileges->fetch_assoc()) {
 }
 
 // Obtener lista de SaaS asociados
-$query_saas = "SELECT * FROM saas WHERE idPaaS IN (SELECT idPaaS FROM r_paas_grup WHERE idGrup IN (SELECT idGrupo FROM grupo WHERE idOrg = ?))";
+$query_saas = "
+    SELECT s.*
+    FROM saas s
+    JOIN r_saas_grup rsg ON s.idSaaS = rsg.idSaaS
+    JOIN grupo g ON rsg.idGrup = g.idGrupo
+    WHERE g.idOrg = ?";
 $stmt_saas = $conn->prepare($query_saas);
 $stmt_saas->bind_param('i', $idOrganizacion);
 $stmt_saas->execute();
 $result_saas = $stmt_saas->get_result();
 
 // Obtener lista de PaaS asociados
-$query_paas = "SELECT p.* 
-               FROM paas p 
-               JOIN r_paas_grup rpg ON p.idPaaS = rpg.idPaaS
-               JOIN grupo g ON rpg.idGrup = g.idGrupo
-               WHERE g.idOrg = ?";
+$query_paas = "
+    SELECT p.* 
+    FROM paas p 
+    JOIN r_paas_grup rpg ON p.idPaaS = rpg.idPaaS
+    JOIN grupo g ON rpg.idGrup = g.idGrupo
+    WHERE g.idOrg = ?";
 $stmt_paas = $conn->prepare($query_paas);
 $stmt_paas->bind_param('i', $idOrganizacion);
 $stmt_paas->execute();
@@ -126,6 +132,7 @@ $result_paas = $stmt_paas->get_result();
             <a href="contratar_saas/contratar_saas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo SaaS</a>
         </div>
         <?php endif; ?>
+        <?php if ($result_saas->num_rows > 0): ?>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -154,6 +161,9 @@ $result_paas = $stmt_paas->get_result();
                 <?php endwhile; ?>
             </tbody>
         </table>
+        <?php else: ?>
+            <p>No hay SaaS asociados a esta organización.</p>
+        <?php endif; ?>
 
         <!-- PaaS -->
         <h2 class="text-center mb-4">Lista de PaaS Asociados</h2>
@@ -162,13 +172,14 @@ $result_paas = $stmt_paas->get_result();
             <a href="contratar_paas/contratar_paas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo PaaS</a>
         </div>
         <?php endif; ?>
+        <?php if ($result_paas->num_rows > 0): ?>
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
                     <th>Estado</th>
-                    <?php if (in_array('Codificar paas', $privileges)): ?>
+                    <?php if (in_array('Modificar paas', $privileges)): ?>
                         <th>Acciones</th>
                     <?php endif; ?>
                 </tr>
@@ -188,6 +199,9 @@ $result_paas = $stmt_paas->get_result();
                 <?php endwhile; ?>
             </tbody>
         </table>
+        <?php else: ?>
+            <p>No hay PaaS asociados a esta organización.</p>
+        <?php endif; ?>
     </main>
 
     <!-- Pie de página -->

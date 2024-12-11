@@ -31,71 +31,102 @@ if ($result_check->num_rows === 0) {
     exit;
 }
 
-// Si se envió el formulario para contratar
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idSaaS'])) {
-    $idSaaS = intval($_POST['idSaaS']);
+// Obtener nombres únicos de motores
+$query_motor_names = "SELECT DISTINCT Nombre FROM motor";
+$result_motor_names = $conn->query($query_motor_names);
 
-    // Verificar que este SaaS está disponible para ser contratado
-    $query_saas_check = "SELECT * FROM saas WHERE idSaaS = ? AND Estado = 'Disponible'";
-    $stmt_saas_check = $conn->prepare($query_saas_check);
-    $stmt_saas_check->bind_param('i', $idSaaS);
-    $stmt_saas_check->execute();
-    $result_saas_check = $stmt_saas_check->get_result();
+// Manejar el formulario de creación
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre_saas = trim($_POST['nombre_saas']);
+    $usuario_saas = $_SESSION['user_name']; // Nombre de usuario actual
+    $contrasena = trim($_POST['contrasena']);
+    $idMotor = intval($_POST['idMotor']);
 
-    if ($result_saas_check->num_rows > 0) {
-        // Actualizar el estado del SaaS a "Activo"
-        $update_query = "UPDATE saas SET Estado = 'Activo' WHERE idSaaS = ?";
-        $stmt_update = $conn->prepare($update_query);
-        $stmt_update->bind_param('i', $idSaaS);
-
-        // Asociar el SaaS con la organización en r_saas_grup
-        $query_get_admin_group = "SELECT idGrupo FROM grupo WHERE idOrg = ? AND Nombre = 'admin'";
-        $stmt_get_admin_group = $conn->prepare($query_get_admin_group);
-        $stmt_get_admin_group->bind_param('i', $idOrganizacion);
-        $stmt_get_admin_group->execute();
-        $result_admin_group = $stmt_get_admin_group->get_result();
-
-        if ($result_admin_group->num_rows > 0) {
-            $admin_group = $result_admin_group->fetch_assoc();
-            $idAdminGroup = $admin_group['idGrupo'];
-
-            $insert_relation = "INSERT INTO r_saas_grup (idSaaS, idGrup) VALUES (?, ?)";
-            $stmt_relation = $conn->prepare($insert_relation);
-            $stmt_relation->bind_param('ii', $idSaaS, $idAdminGroup);
-
-            if ($stmt_update->execute() && $stmt_relation->execute()) {
-                $_SESSION['success_message'] = 'SaaS contratado exitosamente.';
-                header('Location: ../ver_organizacion.php?id=' . $idOrganizacion);
-                exit;
-            } else {
-                $_SESSION['error_message'] = 'Error al contratar el SaaS.';
-            }
-        } else {
-            $_SESSION['error_message'] = 'No se encontró el grupo admin para la organización.';
-        }
+    if (empty($nombre_saas) || empty($contrasena) || $idMotor <= 0) {
+        $_SESSION['error_message'] = 'Todos los campos son obligatorios.';
     } else {
-        $_SESSION['error_message'] = 'El SaaS seleccionado no está disponible.';
+        $conn->begin_transaction();
+        try {
+            // Crear la instancia SaaS
+            $query_create_saas = "INSERT INTO saas (Nombre, Usuario, Contraseña, idPaaS, idMotor) VALUES (?, ?, ?, NULL, ?)";
+            $stmt_create_saas = $conn->prepare($query_create_saas);
+            $stmt_create_saas->bind_param('sssi', $nombre_saas, $usuario_saas, $contrasena, $idMotor);
+
+            if (!$stmt_create_saas->execute()) {
+                throw new Exception('Error al contratar el SaaS.');
+            }
+
+            // Obtener el idSaaS recién creado
+            $idSaaS = $conn->insert_id;
+
+            // Asociar el SaaS con el grupo admin de la organización
+            $query_get_admin_group = "SELECT idGrupo FROM grupo WHERE idOrg = ? AND Nombre = 'admin'";
+            $stmt_get_admin_group = $conn->prepare($query_get_admin_group);
+            $stmt_get_admin_group->bind_param('i', $idOrganizacion);
+            $stmt_get_admin_group->execute();
+            $result_admin_group = $stmt_get_admin_group->get_result();
+
+            if ($result_admin_group->num_rows > 0) {
+                $admin_group = $result_admin_group->fetch_assoc();
+                $idAdminGroup = $admin_group['idGrupo'];
+
+                $insert_relation = "INSERT INTO r_saas_grup (idSaaS, idGrup) VALUES (?, ?)";
+                $stmt_relation = $conn->prepare($insert_relation);
+                $stmt_relation->bind_param('ii', $idSaaS, $idAdminGroup);
+                if (!$stmt_relation->execute()) {
+                    throw new Exception('Error al asociar el SaaS con el grupo admin.');
+                }
+            } else {
+                throw new Exception('No se encontró el grupo admin para la organización.');
+            }
+
+            $conn->commit();
+            $_SESSION['success_message'] = 'SaaS contratado exitosamente.';
+            header('Location: ../ver_organizacion.php?id=' . $idOrganizacion);
+            exit;
+        } catch (Exception $e) {
+            $conn->rollback();
+            $_SESSION['error_message'] = $e->getMessage();
+        }
     }
 }
-
-// Obtener lista de SaaS disponibles
-$query_saas = "SELECT * FROM saas WHERE Estado = 'Disponible'";
-$result_saas = $conn->query($query_saas);
-
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contratar SaaS - TotCloud</title>
     <link href="../../../css/estilos.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        function fetchMotorVersions() {
+            const nombre = document.getElementById('motor_name').value;
+            const versionSelect = document.getElementById('motor_version');
+
+            if (nombre) {
+                fetch(`fetch_motor_versions.php?nombre=${encodeURIComponent(nombre)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        versionSelect.innerHTML = '<option value="">Seleccione una versión</option>';
+                        data.forEach(version => {
+                            const option = document.createElement('option');
+                            option.value = version.idMotor;
+                            option.textContent = version.Version;
+                            versionSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error al cargar las versiones:', error));
+            } else {
+                versionSelect.innerHTML = '<option value="">Seleccione un motor primero</option>';
+            }
+        }
+    </script>
 </head>
 <body>
     <!-- Encabezado -->
-    <header class="bg-primary text-white d-flex justify-content-between align-items-center p-3">
-        <h1 class="h3 mb-0">Contratar SaaS</h1>
+    <header class="bg-primary text-white text-center py-3">
+        <h1>Contratar SaaS</h1>
         <a href="../ver_organizacion.php?id=<?php echo $idOrganizacion; ?>" class="btn btn-outline-light">Volver a la Organización</a>
     </header>
 
@@ -112,39 +143,40 @@ $result_saas = $conn->query($query_saas);
             </div>
         <?php endif; ?>
 
-        <h2 class="text-center mb-4">Selecciona un SaaS para Contratar</h2>
-        
-        <?php if ($result_saas->num_rows > 0): ?>
-            <form method="POST">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Estado</th>
-                            <th>Seleccionar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($saas = $result_saas->fetch_assoc()): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($saas['idSaaS']); ?></td>
-                                <td><?php echo htmlspecialchars($saas['Nombre']); ?></td>
-                                <td><?php echo htmlspecialchars($saas['Estado']); ?></td>
-                                <td>
-                                    <input type="radio" name="idSaaS" value="<?php echo $saas['idSaaS']; ?>">
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">Contratar</button>
-                </div>
-            </form>
-        <?php else: ?>
-            <p class="text-center">No hay SaaS disponibles para contratar.</p>
-        <?php endif; ?>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="nombre_saas" class="form-label">Nombre del SaaS</label>
+                <input type="text" class="form-control" id="nombre_saas" name="nombre_saas" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="contrasena" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="contrasena" name="contrasena" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="motor_name" class="form-label">Seleccione un motor</label>
+                <select class="form-select" id="motor_name" name="motor_name" onchange="fetchMotorVersions()" required>
+                    <option value="">Seleccione un motor</option>
+                    <?php while ($motor = $result_motor_names->fetch_assoc()): ?>
+                        <option value="<?php echo htmlspecialchars($motor['Nombre']); ?>">
+                            <?php echo htmlspecialchars($motor['Nombre']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="motor_version" class="form-label">Seleccione una versión</label>
+                <select class="form-select" id="motor_version" name="idMotor" required>
+                    <option value="">Seleccione un motor primero</option>
+                </select>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Contratar SaaS</button>
+            </div>
+        </form>
     </main>
 
     <?php include '../../../../includes/footer.php'; ?>
