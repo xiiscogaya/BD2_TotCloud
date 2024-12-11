@@ -115,7 +115,6 @@ $result = $stmt->get_result();
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Descripción</th>
                     <th>Acciones</th>
@@ -124,7 +123,6 @@ $result = $stmt->get_result();
             <tbody>
                 <?php while ($organizacion = $result->fetch_assoc()): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($organizacion['idOrganizacion']); ?></td>
                         <td><?php echo htmlspecialchars($organizacion['Nombre']); ?></td>
                         <td><?php echo htmlspecialchars($organizacion['Descripcion']); ?></td>
                         <td>
