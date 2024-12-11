@@ -64,48 +64,56 @@ $query_all_privileges = "
     WHERE Nombre NOT IN ('Contratar paas', 'Contratar saas')";
 $result_all_privileges = $conn->query($query_all_privileges);
 
-// Gestionar la actualización del grupo
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action']) && $_POST['action'] === 'editar') {
-        // Editar el nombre y descripción del grupo
-        $nombre = trim($_POST['nombre']);
-        $descripcion = trim($_POST['descripcion']);
-        $selected_privileges = isset($_POST['privilegios']) ? $_POST['privilegios'] : [];
+// Obtener los SaaS asociados al grupo
+$query_saas_group = "SELECT idSaaS FROM r_saas_grup WHERE idGrup = ?";
+$stmt_saas_group = $conn->prepare($query_saas_group);
+$stmt_saas_group->bind_param('i', $idGrupo);
+$stmt_saas_group->execute();
+$result_saas_group = $stmt_saas_group->get_result();
 
-        if (!empty($nombre)) {
-            // Actualizar nombre y descripción del grupo
-            $query_update_group = "UPDATE grupo SET Nombre = ?, Descripcion = ? WHERE idGrupo = ? AND idOrg = ?";
-            $stmt_update_group = $conn->prepare($query_update_group);
-            $stmt_update_group->bind_param('ssii', $nombre, $descripcion, $idGrupo, $idOrganizacion);
-
-            if ($stmt_update_group->execute()) {
-                // Actualizar privilegios del grupo
-                // Primero eliminar todos los privilegios actuales
-                $query_delete_privileges = "DELETE FROM r_grup_priv WHERE idGrup = ?";
-                $stmt_delete_privileges = $conn->prepare($query_delete_privileges);
-                $stmt_delete_privileges->bind_param('i', $idGrupo);
-                $stmt_delete_privileges->execute();
-
-                // Insertar los privilegios seleccionados
-                foreach ($selected_privileges as $idPriv) {
-                    $query_add_privilege = "INSERT INTO r_grup_priv (idGrup, idPriv) VALUES (?, ?)";
-                    $stmt_add_privilege = $conn->prepare($query_add_privilege);
-                    $stmt_add_privilege->bind_param('ii', $idGrupo, $idPriv);
-                    $stmt_add_privilege->execute();
-                }
-
-                $_SESSION['success_message'] = 'Grupo actualizado exitosamente.';
-                header('Location: gestionar_grupos.php?idOrg=' . $idOrganizacion);
-                exit;
-            } else {
-                $_SESSION['error_message'] = 'Error al actualizar el grupo.';
-            }
-        } else {
-            $_SESSION['error_message'] = 'El nombre del grupo es obligatorio.';
-        }
-    }
+$saas_group = [];
+while ($saas = $result_saas_group->fetch_assoc()) {
+    $saas_group[] = $saas['idSaaS'];
 }
+
+// Obtener los PaaS asociados al grupo
+$query_paas_group = "SELECT idPaaS FROM r_paas_grup WHERE idGrup = ?";
+$stmt_paas_group = $conn->prepare($query_paas_group);
+$stmt_paas_group->bind_param('i', $idGrupo);
+$stmt_paas_group->execute();
+$result_paas_group = $stmt_paas_group->get_result();
+
+$paas_group = [];
+while ($paas = $result_paas_group->fetch_assoc()) {
+    $paas_group[] = $paas['idPaaS'];
+}
+
+// Obtener los SaaS disponibles en la organización
+$query_saas = "
+    SELECT s.idSaaS, s.Nombre AS SaaS, p.idPaaS, p.Nombre AS PaaS
+    FROM saas s
+    JOIN paas p ON s.idPaaS = p.idPaaS
+    JOIN r_saas_grup rsg ON s.idSaaS = rsg.idSaaS
+    JOIN grupo g ON rsg.idGrup = g.idGrupo
+    WHERE g.idOrg = ? AND g.Nombre = 'admin'";
+$stmt_saas = $conn->prepare($query_saas);
+$stmt_saas->bind_param('i', $idOrganizacion);
+$stmt_saas->execute();
+$result_saas = $stmt_saas->get_result();
+
+// Obtener los PaaS disponibles en la organización
+$query_paas = "
+    SELECT p.idPaaS, p.Nombre
+    FROM paas p
+    JOIN r_paas_grup rpg ON p.idPaaS = rpg.idPaaS
+    JOIN grupo g ON rpg.idGrup = g.idGrupo
+    WHERE g.idOrg = ?";
+$stmt_paas = $conn->prepare($query_paas);
+$stmt_paas->bind_param('i', $idOrganizacion);
+$stmt_paas->execute();
+$result_paas = $stmt_paas->get_result();
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -113,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Grupo - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../../../css/estilos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
     <!-- Encabezado -->
@@ -137,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Formulario de edición de grupo -->
         <h2 class="text-center">Editar Grupo</h2>
-        <form method="POST">
+        <form id="editGroupForm" method="POST">
             <input type="hidden" name="action" value="editar">
             <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre del Grupo</label>
@@ -166,11 +174,120 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endwhile; ?>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            <div class="mb-3">
+                <label for="paas" class="form-label">PaaS Asociados</label>
+                <div>
+                    <?php while ($paas = $result_paas->fetch_assoc()): ?>
+                        <div class="form-check">
+                            <input 
+                                class="form-check-input paas-check" 
+                                type="checkbox" 
+                                id="paas_<?php echo $paas['idPaaS']; ?>" 
+                                name="paas[]" 
+                                value="<?php echo $paas['idPaaS']; ?>"
+                                <?php echo in_array($paas['idPaaS'], $paas_group) ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="paas_<?php echo $paas['idPaaS']; ?>">
+                                <?php echo htmlspecialchars($paas['Nombre']); ?>
+                            </label>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="saas" class="form-label">SaaS Asociados</label>
+                <div>
+                    <?php while ($saas = $result_saas->fetch_assoc()): ?>
+                        <div class="form-check">
+                            <input 
+                                class="form-check-input saas-check" 
+                                type="checkbox" 
+                                id="saas_<?php echo $saas['idSaaS']; ?>" 
+                                name="saas[]" 
+                                value="<?php echo $saas['idSaaS']; ?>" 
+                                data-paas-id="<?php echo $saas['idPaaS']; ?>"
+                                data-paas-name="<?php echo htmlspecialchars($saas['PaaS']); ?>"
+                                <?php echo in_array($saas['idSaaS'], $saas_group) ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="saas_<?php echo $saas['idSaaS']; ?>">
+                                <?php echo htmlspecialchars($saas['SaaS']); ?> (PaaS: <?php echo htmlspecialchars($saas['PaaS']); ?>)
+                            </label>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="confirmChanges">Confirmar Cambios</button>
         </form>
     </main>
 
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">Confirmar Cambios del Grupo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Nombre del Grupo:</strong> <span id="confirmNombre"></span></p>
+                    <p><strong>Descripción:</strong> <span id="confirmDescripcion"></span></p>
+                    <p><strong>Privilegios:</strong> <span id="confirmPrivilegios"></span></p>
+                    <p><strong>PaaS Seleccionados:</strong> <span id="confirmPaaS"></span></p>
+                    <p><strong>SaaS Seleccionados:</strong> <span id="confirmSaaS"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="finalSubmit">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Pie de página -->
     <?php include '../../../../includes/footer.php'; ?>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('editGroupForm');
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+
+            document.getElementById('confirmChanges').addEventListener('click', () => {
+                const selectedPaaSSet = new Set();
+
+                // Añadir PaaS seleccionados directamente
+                document.querySelectorAll('.paas-check:checked').forEach(opt => {
+                    selectedPaaSSet.add(opt.nextElementSibling.textContent.trim());
+                });
+
+                // Añadir PaaS vinculados a SaaS seleccionados
+                document.querySelectorAll('.saas-check:checked').forEach(opt => {
+                    const paasName = opt.getAttribute('data-paas-name');
+                    if (paasName) {
+                        selectedPaaSSet.add(paasName);
+                    }
+                });
+
+                // Mostrar datos en el modal
+                document.getElementById('confirmNombre').textContent = document.getElementById('nombre').value;
+                document.getElementById('confirmDescripcion').textContent = document.getElementById('descripcion').value || 'Sin descripción';
+
+                const selectedPrivileges = Array.from(document.querySelectorAll('[name="privilegios[]"]:checked'))
+                    .map(priv => priv.nextElementSibling.textContent.trim());
+                document.getElementById('confirmPrivilegios').textContent = selectedPrivileges.join(', ') || 'Sin privilegios';
+
+                document.getElementById('confirmPaaS').textContent = Array.from(selectedPaaSSet).join(', ') || 'Sin PaaS';
+
+                const selectedSaaS = Array.from(document.querySelectorAll('.saas-check:checked')).map(opt => opt.nextElementSibling.textContent.trim());
+                document.getElementById('confirmSaaS').textContent = selectedSaaS.join(', ') || 'Sin SaaS';
+
+                confirmModal.show();
+            });
+
+            // Enviar formulario al confirmar
+            document.getElementById('finalSubmit').addEventListener('click', () => {
+                form.submit();
+            });
+        });
+
+    </script>
 </body>
 </html>
