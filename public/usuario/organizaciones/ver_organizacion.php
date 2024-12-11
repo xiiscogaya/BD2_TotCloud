@@ -82,6 +82,7 @@ $result_paas = $stmt_paas->get_result();
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,6 +90,7 @@ $result_paas = $stmt_paas->get_result();
     <link href="../../css/estilos.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
     <!-- Encabezado -->
     <header class="bg-primary text-white d-flex justify-content-between align-items-center p-3">
@@ -104,64 +106,70 @@ $result_paas = $stmt_paas->get_result();
     <main class="container my-5">
         <?php if (!empty($_SESSION['success_message'])): ?>
             <div class="alert alert-success">
-                <?php echo htmlspecialchars($_SESSION['success_message']); unset($_SESSION['success_message']); ?>
+                <?php echo htmlspecialchars($_SESSION['success_message']);
+                unset($_SESSION['success_message']); ?>
             </div>
         <?php endif; ?>
         <?php if (!empty($_SESSION['error_message'])): ?>
             <div class="alert alert-danger">
-                <?php echo htmlspecialchars($_SESSION['error_message']); unset($_SESSION['error_message']); ?>
+                <?php echo htmlspecialchars($_SESSION['error_message']);
+                unset($_SESSION['error_message']); ?>
             </div>
         <?php endif; ?>
 
         <!-- Acciones generales -->
         <div class="d-flex justify-content-between mb-4">
             <?php if (in_array('Gestionar grupos', $privileges)): ?>
-                <a href="gestionar_grupos/gestionar_grupos.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-info">Gestionar Grupos</a>
+                <a href="gestionar_grupos/gestionar_grupos.php?idOrg=<?php echo $idOrganizacion; ?>"
+                    class="btn btn-info">Gestionar Grupos</a>
             <?php endif; ?>
             <?php if (in_array('Añadir usuarios', $privileges)): ?>
-                <a href="añadir_usuarios/añadir_usuarios.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-warning">Añadir Personas</a>
+                <a href="añadir_usuarios/añadir_usuarios.php?idOrg=<?php echo $idOrganizacion; ?>"
+                    class="btn btn-warning">Añadir Personas</a>
             <?php endif; ?>
         </div>
 
         <!-- Lista de PaaS -->
         <h2 class="text-center mb-4">Lista de PaaS Asociados</h2>
         <?php if (in_array('Contratar paas', $privileges)): ?>
-        <div class="mb-3 text-end">
-            <a href="contratar_paas/contratar_paas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo PaaS</a>
-        </div>
+            <div class="mb-3 text-end">
+                <a href="contratar_paas/contratar_paas.php?idOrg=<?php echo $idOrganizacion; ?>"
+                    class="btn btn-success">Contratar Nuevo PaaS</a>
+            </div>
         <?php endif; ?>
         <?php if ($result_paas->num_rows > 0): ?>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($paas = $result_paas->fetch_assoc()): ?>
+            <table class="table table-bordered">
+                <thead>
                     <tr>
-                        <td><?php echo htmlspecialchars($paas['idPaaS']); ?></td>
-                        <td>
-                            <a href="#" class="paas-link text-primary" data-id="<?php echo $paas['idPaaS']; ?>" data-bs-toggle="modal" data-bs-target="#detailsModal">
-                                <?php echo htmlspecialchars($paas['Nombre']); ?>
-                            </a>
-                        </td>
-                        <td><?php echo htmlspecialchars($paas['Estado']); ?></td>
-                        <td>
-                            <?php if (in_array('Modificar paas', $privileges)): ?>
-                                <a href="modificar_paas.php?id=<?php echo $paas['idPaaS']; ?>" class="btn btn-warning btn-sm">Editar</a>
-                            <?php endif; ?>
-                            <?php if (in_array('Eliminar paas', $privileges)): ?>
-                                <a href="eliminar_paas.php?id=<?php echo $paas['idPaaS']; ?>" class="btn btn-danger btn-sm">Eliminar</a>
-                            <?php endif; ?>
-                        </td>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php while ($paas = $result_paas->fetch_assoc()): ?>
+                        <tr>
+                            <td>
+                                <a href="#" class="paas-link text-primary" data-id="<?php echo $paas['idPaaS']; ?>"
+                                    data-bs-toggle="modal" data-bs-target="#detailsModal">
+                                    <?php echo htmlspecialchars($paas['Nombre']); ?>
+                                </a>
+                            </td>
+                            <td><?php echo htmlspecialchars($paas['Estado']); ?></td>
+                            <td>
+                                <?php if (in_array('Modificar paas', $privileges)): ?>
+                                    <a href="modificar_paas.php?id=<?php echo $paas['idPaaS']; ?>"
+                                        class="btn btn-warning btn-sm">Editar</a>
+                                <?php endif; ?>
+                                <?php if (in_array('Eliminar paas', $privileges)): ?>
+                                    <a href="eliminar_paas.php?id=<?php echo $paas['idPaaS']; ?>"
+                                        class="btn btn-danger btn-sm">Eliminar</a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
         <?php else: ?>
             <p>No hay PaaS asociados a esta organización.</p>
         <?php endif; ?>
@@ -193,44 +201,44 @@ $result_paas = $stmt_paas->get_result();
         <!-- Lista de SaaS -->
         <h2 class="text-center mb-4">Lista de SaaS Asociados</h2>
         <?php if (in_array('Contratar saas', $privileges)): ?>
-        <div class="mb-3 text-end">
-            <a href="contratar_saas/contratar_saas.php?idOrg=<?php echo $idOrganizacion; ?>" class="btn btn-success">Contratar Nuevo SaaS</a>
-        </div>
+            <div class="mb-3 text-end">
+                <a href="contratar_saas/contratar_saas.php?idOrg=<?php echo $idOrganizacion; ?>"
+                    class="btn btn-success">Contratar Nuevo SaaS</a>
+            </div>
         <?php endif; ?>
         <?php if ($result_saas->num_rows > 0): ?>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Usuario</th>
-                    <th>Contraseña</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($saas = $result_saas->fetch_assoc()): ?>
+            <table class="table table-bordered">
+                <thead>
                     <tr>
-                        <td><?php echo htmlspecialchars($saas['idSaaS']); ?></td>
-                        <td>
-                            <a href="#" class="saas-link text-primary" data-id="<?php echo $saas['idSaaS']; ?>" data-bs-toggle="modal" data-bs-target="#saasModal">
-                                <?php echo htmlspecialchars($saas['Nombre']); ?>
-                            </a>
-                        </td>
-                        <td><?php echo htmlspecialchars($saas['Usuario']); ?></td>
-                        <td><?php echo htmlspecialchars($saas['Contraseña']); ?></td>
-                        <td>
-                            <?php if (in_array('Modificar saas', $privileges)): ?>
-                                <a href="modificar_saas.php?id=<?php echo $saas['idSaaS']; ?>" class="btn btn-warning btn-sm">Editar</a>
-                            <?php endif; ?>
-                            <?php if (in_array('Eliminar saas', $privileges)): ?>
-                                <a href="eliminar_saas.php?id=<?php echo $saas['idSaaS']; ?>" class="btn btn-danger btn-sm">Eliminar</a>
-                            <?php endif; ?>
-                        </td>
+                        <th>Nombre</th>
+                        <th>Usuario</th>
+                        <th>Acciones</th>
                     </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php while ($saas = $result_saas->fetch_assoc()): ?>
+                        <tr>
+                            <td>
+                                <a href="#" class="saas-link text-primary" data-id="<?php echo $saas['idSaaS']; ?>"
+                                    data-bs-toggle="modal" data-bs-target="#saasModal">
+                                    <?php echo htmlspecialchars($saas['Nombre']); ?>
+                                </a>
+                            </td>
+                            <td><?php echo htmlspecialchars($saas['Usuario']); ?></td>
+                            <td>
+                                <?php if (in_array('Modificar saas', $privileges)): ?>
+                                    <a href="modificar_saas.php?id=<?php echo $saas['idSaaS']; ?>"
+                                        class="btn btn-warning btn-sm">Editar</a>
+                                <?php endif; ?>
+                                <?php if (in_array('Eliminar saas', $privileges)): ?>
+                                    <a href="eliminar_saas.php?id=<?php echo $saas['idSaaS']; ?>"
+                                        class="btn btn-danger btn-sm">Eliminar</a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
         <?php else: ?>
             <p>No hay SaaS asociados a esta organización.</p>
         <?php endif; ?>
@@ -265,102 +273,103 @@ $result_paas = $stmt_paas->get_result();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const detailsModal = document.getElementById('detailsModal');
-        const saasModal = document.getElementById('saasModal');
+        document.addEventListener('DOMContentLoaded', function () {
+            const detailsModal = document.getElementById('detailsModal');
+            const saasModal = document.getElementById('saasModal');
 
-        // Modal para PaaS
-        detailsModal.addEventListener('show.bs.modal', event => {
-            const button = event.relatedTarget;
-            const id = button.getAttribute('data-id');
+            // Modal para PaaS
+            detailsModal.addEventListener('show.bs.modal', event => {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
 
-            fetch(`fetch_paas_details.php?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data || !data.details) {
-                        document.getElementById('modalNombre').textContent = 'Sin datos';
-                        document.getElementById('modalExtra').textContent = 'N/A';
+                fetch(`fetch_paas_details.php?id=${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data || !data.details) {
+                            document.getElementById('modalNombre').textContent = 'Sin datos';
+                            document.getElementById('modalExtra').textContent = 'N/A';
+                            document.getElementById('modalCoste').textContent = '0 €';
+                            document.getElementById('modalComponentes').innerHTML = '<li>Sin datos</li>';
+                            return;
+                        }
+
+                        document.getElementById('modalNombre').textContent = data.details.Nombre || 'Sin nombre';
+                        document.getElementById('modalExtra').textContent = data.details.Estado || 'Desconocido';
+                        document.getElementById('modalCoste').textContent = (data.details.CosteTotal || 0) + ' €';
+
+                        const componentesList = document.getElementById('modalComponentes');
+                        componentesList.innerHTML = '';
+                        if (data.components && data.components.length > 0) {
+                            data.components.forEach(component => {
+                                const li = document.createElement('li');
+                                li.textContent = `${component.Tipo}: ${component.Nombre} (Cantidad: ${component.Cantidad})`;
+                                componentesList.appendChild(li);
+                            });
+                        } else {
+                            componentesList.innerHTML = '<li>Sin componentes</li>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar detalles:', error);
+                        document.getElementById('modalNombre').textContent = 'Error';
+                        document.getElementById('modalExtra').textContent = 'Error';
                         document.getElementById('modalCoste').textContent = '0 €';
-                        document.getElementById('modalComponentes').innerHTML = '<li>Sin datos</li>';
-                        return;
-                    }
+                        document.getElementById('modalComponentes').innerHTML = '<li>Error al cargar componentes</li>';
+                    });
+            });
 
-                    document.getElementById('modalNombre').textContent = data.details.Nombre || 'Sin nombre';
-                    document.getElementById('modalExtra').textContent = data.details.Estado || 'Desconocido';
-                    document.getElementById('modalCoste').textContent = (data.details.CosteTotal || 0) + ' €';
+            // Modal para SaaS
+            saasModal.addEventListener('show.bs.modal', event => {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
 
-                    const componentesList = document.getElementById('modalComponentes');
-                    componentesList.innerHTML = '';
-                    if (data.components && data.components.length > 0) {
-                        data.components.forEach(component => {
-                            const li = document.createElement('li');
-                            li.textContent = `${component.Tipo}: ${component.Nombre} (Cantidad: ${component.Cantidad})`;
-                            componentesList.appendChild(li);
-                        });
-                    } else {
-                        componentesList.innerHTML = '<li>Sin componentes</li>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al cargar detalles:', error);
-                    document.getElementById('modalNombre').textContent = 'Error';
-                    document.getElementById('modalExtra').textContent = 'Error';
-                    document.getElementById('modalCoste').textContent = '0 €';
-                    document.getElementById('modalComponentes').innerHTML = '<li>Error al cargar componentes</li>';
-                });
-        });
+                fetch(`fetch_saas_details.php?id=${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data || !data.details) {
+                            document.getElementById('modalSaasNombre').textContent = 'Sin datos';
+                            document.getElementById('modalSaasUsuario').textContent = 'N/A';
+                            document.getElementById('modalSaasContraseña').textContent = 'N/A';
+                            document.getElementById('modalSaasMotor').textContent = 'N/A';
+                            document.getElementById('modalSaasVersion').textContent = 'N/A';
+                            document.getElementById('modalSaasCoste').textContent = '0 €';
+                            document.getElementById('modalSaasComponentes').innerHTML = '<li>Sin datos</li>';
+                            return;
+                        }
 
-        // Modal para SaaS
-        saasModal.addEventListener('show.bs.modal', event => {
-            const button = event.relatedTarget;
-            const id = button.getAttribute('data-id');
+                        document.getElementById('modalSaasNombre').textContent = data.details.Nombre || 'Sin nombre';
+                        document.getElementById('modalSaasUsuario').textContent = data.details.Usuario || 'Desconocido';
+                        document.getElementById('modalSaasContraseña').textContent = data.details.Contraseña || 'Desconocida';
+                        document.getElementById('modalSaasMotor').textContent = data.details.Motor || 'N/A';
+                        document.getElementById('modalSaasVersion').textContent = data.details.Version || 'N/A';
+                        document.getElementById('modalSaasCoste').textContent = (data.details.CosteTotal || 0) + ' €';
 
-            fetch(`fetch_saas_details.php?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data || !data.details) {
-                        document.getElementById('modalSaasNombre').textContent = 'Sin datos';
-                        document.getElementById('modalSaasUsuario').textContent = 'N/A';
-                        document.getElementById('modalSaasContraseña').textContent = 'N/A';
-                        document.getElementById('modalSaasMotor').textContent = 'N/A';
-                        document.getElementById('modalSaasVersion').textContent = 'N/A';
+                        const componentesList = document.getElementById('modalSaasComponentes');
+                        componentesList.innerHTML = '';
+                        if (data.components && data.components.length > 0) {
+                            data.components.forEach(component => {
+                                const li = document.createElement('li');
+                                li.textContent = `${component.Tipo}: ${component.Nombre} (Cantidad: ${component.Cantidad})`;
+                                componentesList.appendChild(li);
+                            });
+                        } else {
+                            componentesList.innerHTML = '<li>Sin componentes</li>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar detalles:', error);
+                        document.getElementById('modalSaasNombre').textContent = 'Error';
+                        document.getElementById('modalSaasUsuario').textContent = 'Error';
+                        document.getElementById('modalSaasContraseña').textContent = 'Error';
+                        document.getElementById('modalSaasMotor').textContent = 'Error';
+                        document.getElementById('modalSaasVersion').textContent = 'Error';
                         document.getElementById('modalSaasCoste').textContent = '0 €';
-                        document.getElementById('modalSaasComponentes').innerHTML = '<li>Sin datos</li>';
-                        return;
-                    }
-
-                    document.getElementById('modalSaasNombre').textContent = data.details.Nombre || 'Sin nombre';
-                    document.getElementById('modalSaasUsuario').textContent = data.details.Usuario || 'Desconocido';
-                    document.getElementById('modalSaasContraseña').textContent = data.details.Contraseña || 'Desconocida';
-                    document.getElementById('modalSaasMotor').textContent = data.details.Motor || 'N/A';
-                    document.getElementById('modalSaasVersion').textContent = data.details.Version || 'N/A';
-                    document.getElementById('modalSaasCoste').textContent = (data.details.CosteTotal || 0) + ' €';
-
-                    const componentesList = document.getElementById('modalSaasComponentes');
-                    componentesList.innerHTML = '';
-                    if (data.components && data.components.length > 0) {
-                        data.components.forEach(component => {
-                            const li = document.createElement('li');
-                            li.textContent = `${component.Tipo}: ${component.Nombre} (Cantidad: ${component.Cantidad})`;
-                            componentesList.appendChild(li);
-                        });
-                    } else {
-                        componentesList.innerHTML = '<li>Sin componentes</li>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al cargar detalles:', error);
-                    document.getElementById('modalSaasNombre').textContent = 'Error';
-                    document.getElementById('modalSaasUsuario').textContent = 'Error';
-                    document.getElementById('modalSaasContraseña').textContent = 'Error';
-                    document.getElementById('modalSaasMotor').textContent = 'Error';
-                    document.getElementById('modalSaasVersion').textContent = 'Error';
-                    document.getElementById('modalSaasCoste').textContent = '0 €';
-                    document.getElementById('modalSaasComponentes').innerHTML = '<li>Error al cargar componentes</li>';
-                });
+                        document.getElementById('modalSaasComponentes').innerHTML = '<li>Error al cargar componentes</li>';
+                    });
+            });
         });
-    });
     </script>
 
 </body>
+
 </html>
