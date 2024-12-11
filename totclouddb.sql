@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-12-2024 a las 09:50:53
+-- Tiempo de generación: 11-12-2024 a las 18:05:23
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -43,9 +43,9 @@ CREATE TABLE `almacenamiento` (
 --
 
 INSERT INTO `almacenamiento` (`idAlmacenamiento`, `Nombre`, `Tipo`, `VelocidadLectura`, `VelocidadEscritura`, `Capacidad`, `PrecioH`, `Cantidad`) VALUES
-(1, 'Samsung 970 EVO Plus', 'SSD', 3500.00, 3300.00, 1000.00, 0.20, 20),
-(2, 'Seagate Barracuda', 'HDD', 150.00, 140.00, 2000.00, 0.10, 50),
-(3, 'Western Digital Blue SN570', 'NVMe', 3500.00, 3000.00, 512.00, 0.25, 10),
+(1, 'Samsung 970 EVO Plus', 'SSD', 3500.00, 3300.00, 1000.00, 0.20, 0),
+(2, 'Seagate Barracuda', 'HDD', 150.00, 140.00, 2000.00, 0.10, 53),
+(3, 'Western Digital Blue SN570', 'NVMe', 3500.00, 3000.00, 512.00, 0.25, 15),
 (4, 'Kingston A400', 'SATA', 500.00, 450.00, 256.00, 0.05, 40);
 
 -- --------------------------------------------------------
@@ -86,10 +86,10 @@ CREATE TABLE `cpu` (
 --
 
 INSERT INTO `cpu` (`idCPU`, `Nombre`, `Fabricante`, `Arquitectura`, `Nucleos`, `Frecuencia`, `PrecioH`, `Cantidad`) VALUES
-(1, 'Intel Core i5-11600K', 'Intel', 'x86-64', 6, 3.90, 0.25, 10),
-(2, 'AMD Ryzen 7 5800X', 'AMD', 'x86-64', 8, 3.80, 0.30, 20),
+(1, 'Intel Core i5-11600K', 'Intel', 'x86-64', 6, 3.90, 0.25, 0),
+(2, 'AMD Ryzen 7 5800X', 'AMD', 'x86-64', 8, 3.80, 0.30, 0),
 (3, 'Intel Core i9-12900K', 'Intel', 'x86-64', 16, 3.20, 0.50, 10),
-(4, 'AMD Ryzen Threadripper 3990X', 'AMD', 'x86-64', 64, 2.90, 1.00, 0),
+(4, 'AMD Ryzen Threadripper 3990X', 'AMD', 'x86-64', 64, 2.90, 1.00, 5),
 (5, 'Intel Xeon Gold 6258R', 'Intel', 'x86-64', 28, 3.00, 0.75, 8),
 (6, 'AMD EPYC 7763', 'AMD', 'x86-64', 64, 2.45, 0.90, 6);
 
@@ -111,7 +111,7 @@ CREATE TABLE `direccionip` (
 --
 
 INSERT INTO `direccionip` (`idIp`, `Direccion`, `PrecioH`, `idPaaS`) VALUES
-(1, '192.8.9.1', 0.10, 1),
+(1, '192.8.9.1', 0.10, NULL),
 (2, '192.8.9.2', 0.10, NULL);
 
 -- --------------------------------------------------------
@@ -215,8 +215,7 @@ CREATE TABLE `paas` (
 --
 
 INSERT INTO `paas` (`idPaaS`, `Nombre`, `Estado`, `idSO`) VALUES
-(1, 'InstanciaPaaS1', 'Activo', 1),
-(2, 'PaaSNumero2', 'Disponible', NULL);
+(1, 'PaaS1', 'Activo', 1);
 
 -- --------------------------------------------------------
 
@@ -266,8 +265,8 @@ CREATE TABLE `ram` (
 --
 
 INSERT INTO `ram` (`idRAM`, `Nombre`, `Fabricante`, `Frecuencia`, `Capacidad`, `Tipo`, `PrecioH`, `Cantidad`) VALUES
-(1, 'Kingston DDR4', 'Kingston', 3200.00, 16.00, 'DDR4', 0.10, 50),
-(2, 'Corsair Vengeance LPX', 'Corsair', 3600.00, 32.00, 'DDR4', 0.15, 25),
+(1, 'Kingston DDR4', 'Kingston', 3200.00, 16.00, 'DDR4', 0.10, 48),
+(2, 'Corsair Vengeance LPX', 'Corsair', 3600.00, 32.00, 'DDR4', 0.15, 29),
 (3, 'HyperX Fury DDR5', 'HyperX', 4800.00, 16.00, 'DDR5', 0.20, 20),
 (4, 'G.Skill Trident Z', 'G.Skill', 3200.00, 64.00, 'DDR4', 0.25, 10);
 
@@ -323,9 +322,7 @@ CREATE TABLE `r_paas_almacenamiento` (
 --
 
 INSERT INTO `r_paas_almacenamiento` (`idPaaS`, `idAlmacenamiento`, `Cantidad`) VALUES
-(1, 1, 4),
-(1, 2, 3),
-(2, 3, 5);
+(1, 1, 4);
 
 -- --------------------------------------------------------
 
@@ -344,8 +341,7 @@ CREATE TABLE `r_paas_cpu` (
 --
 
 INSERT INTO `r_paas_cpu` (`idPaaS`, `idCPU`, `Cantidad`) VALUES
-(1, 1, 5),
-(2, 4, 5);
+(1, 2, 20);
 
 -- --------------------------------------------------------
 
@@ -382,8 +378,7 @@ CREATE TABLE `r_paas_ram` (
 --
 
 INSERT INTO `r_paas_ram` (`idPaaS`, `idRAM`, `Cantidad`) VALUES
-(1, 1, 2),
-(2, 2, 4);
+(1, 1, 2);
 
 -- --------------------------------------------------------
 
@@ -395,13 +390,6 @@ CREATE TABLE `r_saas_grup` (
   `idSaaS` int(11) NOT NULL,
   `idGrup` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `r_saas_grup`
---
-
-INSERT INTO `r_saas_grup` (`idSaaS`, `idGrup`) VALUES
-(0, 4);
 
 -- --------------------------------------------------------
 
@@ -422,7 +410,7 @@ INSERT INTO `r_usuario_grupo` (`idUsuario`, `idGrupo`) VALUES
 (0, 4),
 (0, 5),
 (1, 3),
-(1, 4),
+(1, 5),
 (1, 6);
 
 -- --------------------------------------------------------
@@ -460,13 +448,6 @@ CREATE TABLE `saas` (
   `idPaaS` int(11) DEFAULT NULL,
   `idMotor` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `saas`
---
-
-INSERT INTO `saas` (`idSaaS`, `Nombre`, `Usuario`, `Contraseña`, `idPaaS`, `idMotor`) VALUES
-(0, 'InstanciaSaaS1', 'Xisco Gaya', '12345678', NULL, 1);
 
 -- --------------------------------------------------------
 
