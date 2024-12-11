@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'El nombre de la organización es obligatorio.';
     } else {
         // Generar el próximo ID disponible para la organización
-        $query_next_org_id = "SELECT COALESCE(MAX(idOrganizacion), 0) + 1 AS next_id FROM organizacion";
+        $query_next_org_id = "SELECT COALESCE(MIN(a.idOrganizacion)+1, 1) AS next_id FROM organizacion a LEFT JOIN organizacion b ON a.idOrganizacion = b.idOrganizacion-1 WHERE b.idOrganizacion IS NULL";
         $result_next_org_id = $conn->query($query_next_org_id);
         $next_org_id = $result_next_org_id->fetch_assoc()['next_id'];
 

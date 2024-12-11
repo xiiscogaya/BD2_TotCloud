@@ -1,12 +1,25 @@
 <?php
 session_start();
 include '../../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../../includes/check_worker.php'; // Archivo para verificar si el usuario es trabajador
+
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../login.php');
     exit;
 }
+
+// Obtener el ID del usuario
+$user_id = $_SESSION['user_id'];
+
+// Verificar si el usuario es trabajador
+if (!esTrabajador($conn, $user_id)) {
+    // Si no es trabajador, redirigir a la página de usuario
+    header('Location: ../../usuario/usuario.php');
+    exit;
+}
+
 
 // Verificar si se ha proporcionado un ID de PaaS
 if (!isset($_GET['id']) || empty($_GET['id'])) {

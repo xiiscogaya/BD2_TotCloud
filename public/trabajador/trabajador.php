@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../../includes/db_connect.php'; // Conexión a la base de datos
+include '../../includes/check_worker.php'; // Archivo para verificar si el usuario es trabajador
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
@@ -8,8 +9,17 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Obtener datos del usuario
+// Obtener el ID del usuario
 $user_id = $_SESSION['user_id'];
+
+// Verificar si el usuario es trabajador
+if (!esTrabajador($conn, $user_id)) {
+    // Si no es trabajador, redirigir a la página de usuario
+    header('Location: ../usuario/usuario.php');
+    exit;
+}
+
+// Obtener datos del usuario
 $query = "SELECT * FROM usuario WHERE idUsuario = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param('i', $user_id);
@@ -17,18 +27,6 @@ $stmt->execute();
 $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
-// Verificar si el usuario es trabajador
-$worker_query = "SELECT * FROM trabajador WHERE idUsuario = ?";
-$stmt_worker = $conn->prepare($worker_query);
-$stmt_worker->bind_param('i', $user_id);
-$stmt_worker->execute();
-$worker_result = $stmt_worker->get_result();
-
-if ($worker_result->num_rows === 0) {
-    // Si no es trabajador, redirigir a la página de usuario
-    header('Location: ../usuario/usuario_dashboard.php');
-    exit;
-}
 ?>
 
 <!DOCTYPE html>
