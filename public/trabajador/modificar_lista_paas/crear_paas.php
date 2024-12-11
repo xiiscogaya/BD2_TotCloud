@@ -30,8 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $idRAM = intval($_POST['idRAM']);
     $cantidadRAM = intval($_POST['cantidad_ram']);
     $almacenamientos = $_POST['almacenamientos'] ?? [];
+    $idIp = intval($_POST['idIp']); // Dirección IP seleccionada
 
-    if (empty($nombre) || $idCPU <= 0 || $cantidadCPU <= 0 || $idRAM <= 0 || $cantidadRAM <= 0) {
+    if (empty($nombre) || $idCPU <= 0 || $cantidadCPU <= 0 || $idRAM <= 0 || $cantidadRAM <= 0 || $idIp <= 0) {
         $message = 'Todos los campos son obligatorios.';
     } else {
         // Verificar que la cantidad de CPU y RAM no exceda lo disponible
@@ -63,6 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt_paas->bind_param('iss', $idPaaS, $nombre, $estado);
 
             if ($stmt_paas->execute()) {
+                // Asociar dirección IP a este PaaS
+                $query_update_ip = "UPDATE direccionip SET idPaaS = ? WHERE idIp = ?";
+                $stmt_update_ip = $conn->prepare($query_update_ip);
+                $stmt_update_ip->bind_param('ii', $idPaaS, $idIp);
+                $stmt_update_ip->execute();
+
                 // Insertar CPU seleccionada
                 $query_cpu = "INSERT INTO R_PaaS_CPU (idPaaS, idCPU, Cantidad) VALUES (?, ?, ?)";
                 $stmt_cpu = $conn->prepare($query_cpu);
@@ -122,16 +129,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $cpus = $conn->query("SELECT * FROM cpu WHERE Cantidad > 0");
 $rams = $conn->query("SELECT * FROM ram WHERE Cantidad > 0");
 $almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0");
+$ips_disponibles = $conn->query("SELECT * FROM direccionip WHERE idPaaS IS NULL");
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear PaaS - TotCloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../../css/estilos.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
@@ -161,7 +167,7 @@ $almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0
                     <option value="" data-max="0">Selecciona un tipo de CPU</option>
                     <?php while ($row = $cpus->fetch_assoc()): ?>
                         <option value="<?php echo $row['idCPU']; ?>" data-max="<?php echo $row['Cantidad']; ?>">
-                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Nucleos'] . ' núcleos a ' . $row['Frecuencia'] . 'GHz (Disponible: ' . $row['Cantidad'] . ')'); ?>
+                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Nucleos'] . ' núcleos (Disponible: ' . $row['Cantidad'] . ')'); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -174,7 +180,7 @@ $almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0
                     <option value="" data-max="0">Selecciona un tipo de RAM</option>
                     <?php while ($row = $rams->fetch_assoc()): ?>
                         <option value="<?php echo $row['idRAM']; ?>" data-max="<?php echo $row['Cantidad']; ?>">
-                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB a ' . $row['Frecuencia'] . 'MHz (Disponible: ' . $row['Cantidad'] . ')'); ?>
+                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB (Disponible: ' . $row['Cantidad'] . ')'); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -182,11 +188,26 @@ $almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0
             </div>
 
             <div class="mb-3">
+                <label for="idIp" class="form-label">Seleccionar Dirección IP</label>
+                <select class="form-select" id="idIp" name="idIp" required>
+                    <option value="">Seleccione una dirección IP</option>
+                    <?php while ($row = $ips_disponibles->fetch_assoc()): ?>
+                        <option value="<?php echo $row['idIp']; ?>">
+                            <?php echo htmlspecialchars($row['Direccion'] . ' (Precio: ' . $row['PrecioH'] . ')'); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Seleccionar Almacenamientos</label>
                 <?php while ($row = $almacenamientos->fetch_assoc()): ?>
                     <div class="d-flex align-items-center mb-2">
                         <input type="checkbox" name="almacenamientos[]" value="<?php echo $row['idAlmacenamiento']; ?>">
-                        <span class="ms-2"><?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB ' . $row['Tipo'] . ' (Máx: ' . $row['Cantidad'] . ')'); ?></span>
+                        <span class="ms-2">
+                            <?php echo htmlspecialchars($row['Nombre'] . ' - ' . $row['Capacidad'] . 'GB'); ?>
+                            <strong class="text-muted ms-2">(MAX = <?php echo $row['Cantidad']; ?>)</strong>
+                        </span>
                         <input type="number" 
                                name="cantidad_almacenamiento_<?php echo $row['idAlmacenamiento']; ?>" 
                                min="1" 
@@ -201,21 +222,5 @@ $almacenamientos = $conn->query("SELECT * FROM almacenamiento WHERE Cantidad > 0
             <button type="submit" class="btn btn-primary w-100">Crear Configuración</button>
         </form>
     </main>
-
-    <script>
-        $(document).ready(function () {
-            // Actualizar el máximo permitido en el campo de cantidad de CPU
-            $('#idCPU').on('change', function () {
-                const max = $(this).find(':selected').data('max');
-                $('#cantidadCPU').attr('max', max).attr('placeholder', 'Máx: ' + max);
-            });
-
-            // Actualizar el máximo permitido en el campo de cantidad de RAM
-            $('#idRAM').on('change', function () {
-                const max = $(this).find(':selected').data('max');
-                $('#cantidadRAM').attr('max', max).attr('placeholder', 'Máx: ' + max);
-            });
-        });
-    </script>
 </body>
 </html>

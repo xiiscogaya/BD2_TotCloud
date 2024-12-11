@@ -36,27 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $idPaaS = intval($_POST['idPaaS']);
     $nombre = trim($_POST['nombre']);
     $idSO = intval($_POST['idSO']);
-    $idIp = intval($_POST['idIp']);
 
-    if (empty($nombre) || $idPaaS <= 0 || $idSO <= 0 || $idIp <= 0) {
+    if (empty($nombre) || $idPaaS <= 0 || $idSO <= 0) {
         $_SESSION['error_message'] = 'Todos los campos son obligatorios.';
     } else {
         $conn->begin_transaction();
         try {
-            // Actualizar el nombre, sistema operativo e IP del PaaS seleccionado
+            // Actualizar el PaaS: nombre, estado a 'Activo' y SO
             $update_paas_query = "UPDATE paas SET Nombre = ?, Estado = 'Activo', idSO = ? WHERE idPaaS = ?";
             $stmt_update_paas = $conn->prepare($update_paas_query);
             $stmt_update_paas->bind_param('sii', $nombre, $idSO, $idPaaS);
             if (!$stmt_update_paas->execute()) {
                 throw new Exception('Error al actualizar el PaaS.');
-            }
-
-            // Asociar la IP con el PaaS
-            $update_ip_query = "UPDATE direccionip SET idPaaS = ? WHERE idIp = ?";
-            $stmt_update_ip = $conn->prepare($update_ip_query);
-            $stmt_update_ip->bind_param('ii', $idPaaS, $idIp);
-            if (!$stmt_update_ip->execute()) {
-                throw new Exception('Error al asociar la IP con el PaaS.');
             }
 
             // Asociar el PaaS con el grupo admin de la organización
@@ -95,16 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $query_sos = "SELECT * FROM sistemaoperativo";
 $result_sos = $conn->query($query_sos);
 
-// Obtener direcciones IP disponibles
-$query_ips = "SELECT * FROM direccionip WHERE idPaaS IS NULL";
-$result_ips = $conn->query($query_ips);
-
-// Obtener PaaS disponibles con detalles
+// Obtener PaaS disponibles con detalles (incluye IP)
 $query_paas = "
-    SELECT p.*, 
-           GROUP_CONCAT(DISTINCT CONCAT(c.Nombre, ' (Cantidad: ', rpc.Cantidad, ')') SEPARATOR ', ') AS CPUs,
-           GROUP_CONCAT(DISTINCT CONCAT(r.Nombre, ' (Cantidad: ', rpr.Cantidad, ')') SEPARATOR ', ') AS RAMs,
-           GROUP_CONCAT(DISTINCT CONCAT(a.Nombre, ' (Cantidad: ', rpa.Cantidad, ')') SEPARATOR ', ') AS Almacenamientos
+    SELECT p.idPaaS, p.Nombre, p.Estado,
+           di.Direccion AS IP,
+           GROUP_CONCAT(DISTINCT CONCAT(c.Nombre, ' (Cant: ', rpc.Cantidad, ')') SEPARATOR ', ') AS CPUs,
+           GROUP_CONCAT(DISTINCT CONCAT(r.Nombre, ' (Cant: ', rpr.Cantidad, ')') SEPARATOR ', ') AS RAMs,
+           GROUP_CONCAT(DISTINCT CONCAT(a.Nombre, ' (Cant: ', rpa.Cantidad, ')') SEPARATOR ', ') AS Almacenamientos
     FROM paas p
     LEFT JOIN r_paas_cpu rpc ON p.idPaaS = rpc.idPaaS
     LEFT JOIN cpu c ON rpc.idCPU = c.idCPU
@@ -112,17 +100,18 @@ $query_paas = "
     LEFT JOIN ram r ON rpr.idRAM = r.idRAM
     LEFT JOIN r_paas_almacenamiento rpa ON p.idPaaS = rpa.idPaaS
     LEFT JOIN almacenamiento a ON rpa.idAlmacenamiento = a.idAlmacenamiento
+    LEFT JOIN direccionip di ON p.idPaaS = di.idPaaS
     WHERE p.Estado = 'Disponible'
-    GROUP BY p.idPaaS";
+    GROUP BY p.idPaaS
+";
 $result_paas = $conn->query($query_paas);
-
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear PaaS - TotCloud</title>
+    <title>Contratar PaaS - TotCloud</title>
     <link href="../../../css/estilos.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -149,16 +138,30 @@ $result_paas = $conn->query($query_paas);
         <form method="POST" action="">
             <div class="mb-3">
                 <label for="idPaaS" class="form-label">Seleccionar PaaS Disponible</label>
-                <select class="form-select" id="idPaaS" name="idPaaS" required>
+                <select class="form-select" id="idPaaS" name="idPaaS" required onchange="displayPaaSDetails(this)">
                     <option value="">Seleccione un PaaS</option>
                     <?php while ($paas = $result_paas->fetch_assoc()): ?>
-                        <option value="<?php echo $paas['idPaaS']; ?>">
-                            <?php echo htmlspecialchars($paas['Nombre']); ?> - CPUs: <?php echo htmlspecialchars($paas['CPUs'] ?: 'N/A'); ?>,
-                            RAMs: <?php echo htmlspecialchars($paas['RAMs'] ?: 'N/A'); ?>,
-                            Almacenamientos: <?php echo htmlspecialchars($paas['Almacenamientos'] ?: 'N/A'); ?>
+                        <option value="<?php echo $paas['idPaaS']; ?>" 
+                            data-nombre="<?php echo htmlspecialchars($paas['Nombre']); ?>" 
+                            data-ip="<?php echo htmlspecialchars($paas['IP'] ?: 'Sin IP'); ?>"
+                            data-cpus="<?php echo htmlspecialchars($paas['CPUs'] ?: 'N/A'); ?>"
+                            data-rams="<?php echo htmlspecialchars($paas['RAMs'] ?: 'N/A'); ?>"
+                            data-almacenamientos="<?php echo htmlspecialchars($paas['Almacenamientos'] ?: 'N/A'); ?>">
+                            <?php echo htmlspecialchars($paas['Nombre']); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
+            </div>
+
+            <div id="paasDetails" class="mb-4" style="display: none;">
+                <h4>Detalles del PaaS Seleccionado:</h4>
+                <ul>
+                    <li><strong>Nombre:</strong> <span id="detailNombre"></span></li>
+                    <li><strong>IP:</strong> <span id="detailIP"></span></li>
+                    <li><strong>CPUs:</strong> <span id="detailCPUs"></span></li>
+                    <li><strong>RAMs:</strong> <span id="detailRAMs"></span></li>
+                    <li><strong>Almacenamientos:</strong> <span id="detailAlmacenamientos"></span></li>
+                </ul>
             </div>
 
             <div class="mb-3">
@@ -178,23 +181,28 @@ $result_paas = $conn->query($query_paas);
                 </select>
             </div>
 
-            <div class="mb-3">
-                <label for="idIp" class="form-label">Dirección IP</label>
-                <select class="form-select" id="idIp" name="idIp" required>
-                    <option value="">Seleccione una dirección IP</option>
-                    <?php while ($ip = $result_ips->fetch_assoc()): ?>
-                        <option value="<?php echo $ip['idIp']; ?>">
-                            <?php echo htmlspecialchars($ip['Direccion']); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
-
             <div class="text-end">
                 <button type="submit" class="btn btn-primary">Crear PaaS</button>
             </div>
         </form>
     </main>
+
+    <script>
+        function displayPaaSDetails(select) {
+            const selectedOption = select.options[select.selectedIndex];
+            const details = document.getElementById('paasDetails');
+            if (selectedOption.value) {
+                document.getElementById('detailNombre').innerText = selectedOption.getAttribute('data-nombre');
+                document.getElementById('detailIP').innerText = selectedOption.getAttribute('data-ip');
+                document.getElementById('detailCPUs').innerText = selectedOption.getAttribute('data-cpus');
+                document.getElementById('detailRAMs').innerText = selectedOption.getAttribute('data-rams');
+                document.getElementById('detailAlmacenamientos').innerText = selectedOption.getAttribute('data-almacenamientos');
+                details.style.display = 'block';
+            } else {
+                details.style.display = 'none';
+            }
+        }
+    </script>
 
     <?php include '../../../../includes/footer.php'; ?>
 </body>
