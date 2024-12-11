@@ -81,7 +81,6 @@ $result_users_in_org = $stmt_users_in_org->get_result();
                 <thead>
                     <tr>
                         <th>Seleccionar</th>
-                        <th>ID</th>
                         <th>Nombre</th>
                         <th>Email</th>
                     </tr>
@@ -92,7 +91,6 @@ $result_users_in_org = $stmt_users_in_org->get_result();
                             <td>
                                 <input type="checkbox" name="usuarios[]" value="<?php echo $user['idUsuario']; ?>" checked>
                             </td>
-                            <td><?php echo htmlspecialchars($user['idUsuario']); ?></td>
                             <td><?php echo htmlspecialchars($user['Nombre']); ?></td>
                             <td><?php echo htmlspecialchars($user['Email']); ?></td>
                         </tr>
