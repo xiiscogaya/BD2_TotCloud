@@ -258,7 +258,6 @@ $result_paas = $stmt_paas->get_result();
                     <div class="modal-body">
                         <h6><strong>Nombre:</strong> <span id="modalSaasNombre"></span></h6>
                         <h6><strong>Usuario:</strong> <span id="modalSaasUsuario"></span></h6>
-                        <h6><strong>Contraseña:</strong> <span id="modalSaasContraseña"></span></h6>
                         <h6><strong>Motor:</strong> <span id="modalSaasMotor"></span></h6>
                         <h6><strong>Versión:</strong> <span id="modalSaasVersion"></span></h6>
                         <hr>
@@ -333,7 +332,6 @@ $result_paas = $stmt_paas->get_result();
                         if (!data || !data.details) {
                             document.getElementById('modalSaasNombre').textContent = 'Sin datos';
                             document.getElementById('modalSaasUsuario').textContent = 'N/A';
-                            document.getElementById('modalSaasContraseña').textContent = 'N/A';
                             document.getElementById('modalSaasMotor').textContent = 'N/A';
                             document.getElementById('modalSaasVersion').textContent = 'N/A';
                             document.getElementById('modalSaasCoste').textContent = '0 €';
@@ -343,7 +341,6 @@ $result_paas = $stmt_paas->get_result();
 
                         document.getElementById('modalSaasNombre').textContent = data.details.Nombre || 'Sin nombre';
                         document.getElementById('modalSaasUsuario').textContent = data.details.Usuario || 'Desconocido';
-                        document.getElementById('modalSaasContraseña').textContent = data.details.Contraseña || 'Desconocida';
                         document.getElementById('modalSaasMotor').textContent = data.details.Motor || 'N/A';
                         document.getElementById('modalSaasVersion').textContent = data.details.Version || 'N/A';
                         document.getElementById('modalSaasCoste').textContent = (data.details.CosteTotal || 0) + ' €';
@@ -364,7 +361,6 @@ $result_paas = $stmt_paas->get_result();
                         console.error('Error al cargar detalles:', error);
                         document.getElementById('modalSaasNombre').textContent = 'Error';
                         document.getElementById('modalSaasUsuario').textContent = 'Error';
-                        document.getElementById('modalSaasContraseña').textContent = 'Error';
                         document.getElementById('modalSaasMotor').textContent = 'Error';
                         document.getElementById('modalSaasVersion').textContent = 'Error';
                         document.getElementById('modalSaasCoste').textContent = '0 €';

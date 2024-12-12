@@ -17,11 +17,17 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $idPaaS = intval($_GET['id']);
 
-// Obtener detalles del PaaS
 $query_paas = "
-    SELECT p.idPaaS, p.Nombre AS NombrePaaS, p.Estado, so.idSO, so.Nombre AS NombreSO 
-    FROM paas p 
-    LEFT JOIN sistemaoperativo so ON p.idSO = so.idSO 
+    SELECT 
+        p.idPaaS, 
+        p.Nombre AS NombrePaaS, 
+        p.Estado, 
+        so.idSO, 
+        so.Nombre AS NombreSO,
+        so.Arquitectura AS ArquitecturaSO,
+        so.Version AS VersionSO
+    FROM paas p
+    LEFT JOIN sistemaoperativo so ON p.idSO = so.idSO
     WHERE p.idPaaS = ?";
 $stmt_paas = $conn->prepare($query_paas);
 $stmt_paas->bind_param('i', $idPaaS);
@@ -43,6 +49,8 @@ $result_sos = $conn->query($query_sos);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nuevo_nombre = $_POST['nombre'] ?? '';
     $nuevo_idSO = $_POST['idSO'] ?? null;
+    $nueva_arquitectura = $_POST['arquitectura'] ?? '';
+    $nueva_version = $_POST['version'] ?? '';
 
     // Validar datos
     if (empty($nuevo_nombre)) {
@@ -111,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="mb-3">
                 <label for="idSO" class="form-label">Sistema Operativo</label>
-                <select class="form-select" id="idSO" name="idSO">
-                    <option value="" <?php echo is_null($paas['idSO']) ? 'selected' : ''; ?>>Sin sistema operativo</option>
+                <select class="form-select" id="idSO" name="idSO" onchange="loadArchitecturesVersions(this.value)" required>
+                    <option value="">Seleccione un sistema operativo</option>
                     <?php while ($so = $result_sos->fetch_assoc()): ?>
                         <option value="<?php echo $so['idSO']; ?>" <?php echo $so['idSO'] == $paas['idSO'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($so['Nombre']); ?>
@@ -120,8 +128,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endwhile; ?>
                 </select>
             </div>
+            <div class="mb-3">
+                <label for="arquitectura" class="form-label">Arquitectura</label>
+                <select class="form-select" id="arquitectura" name="arquitectura" required>
+                    <option value="<?php echo htmlspecialchars($paas['ArquitecturaSO']); ?>" selected>
+                        <?php echo htmlspecialchars($paas['ArquitecturaSO']); ?>
+                    </option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="version" class="form-label">Versión</label>
+                <select class="form-select" id="version" name="version" required>
+                    <option value="<?php echo htmlspecialchars($paas['VersionSO']); ?>" selected>
+                        <?php echo htmlspecialchars($paas['VersionSO']); ?>
+                    </option>
+                </select>
+            </div>
+
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </form>
     </main>
+
+    <script>
+        function loadArchitecturesVersions(idSO) {
+            if (!idSO) {
+                document.getElementById('arquitectura').innerHTML = '<option value="">Seleccione primero un sistema operativo</option>';
+                document.getElementById('version').innerHTML = '<option value="">Seleccione primero un sistema operativo</option>';
+                return;
+            }
+
+            fetch(`contratar_paas/get_architectures_versions.php?idSO=${idSO}`)
+                .then(response => response.json())
+                .then(data => {
+                    const arquitecturaSelect = document.getElementById('arquitectura');
+                    const versionSelect = document.getElementById('version');
+
+                    arquitecturaSelect.innerHTML = '';
+                    versionSelect.innerHTML = '';
+
+                    if (data.architectures.length > 0) {
+                        data.architectures.forEach(arch => {
+                            const option = document.createElement('option');
+                            option.value = arch;
+                            option.textContent = arch;
+                            arquitecturaSelect.appendChild(option);
+                        });
+                    } else {
+                        arquitecturaSelect.innerHTML = '<option value="">Sin arquitecturas disponibles</option>';
+                    }
+
+                    if (data.versions.length > 0) {
+                        data.versions.forEach(ver => {
+                            const option = document.createElement('option');
+                            option.value = ver;
+                            option.textContent = ver;
+                            versionSelect.appendChild(option);
+                        });
+                    } else {
+                        versionSelect.innerHTML = '<option value="">Sin versiones disponibles</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar arquitecturas y versiones:', error);
+                    document.getElementById('arquitectura').innerHTML = '<option value="">Error al cargar arquitecturas</option>';
+                    document.getElementById('version').innerHTML = '<option value="">Error al cargar versiones</option>';
+                });
+        }
+    </script>
 </body>
 </html>

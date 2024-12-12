@@ -5,12 +5,11 @@ $idSaaS = intval($_GET['id'] ?? 0);
 $response = [];
 
 if ($idSaaS > 0) {
-    // Detalles principales del SaaS
+    // Detalles principales del SaaS (sin contraseña)
     $query = "
         SELECT 
             s.Nombre, 
             s.Usuario, 
-            s.Contraseña, 
             p.Nombre AS PaaS, 
             m.Nombre AS Motor, 
             m.Version AS Version,

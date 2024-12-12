@@ -36,8 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $idPaaS = intval($_POST['idPaaS']);
     $nombre = trim($_POST['nombre']);
     $idSO = intval($_POST['idSO']);
+    $arquitectura = trim($_POST['arquitectura']);
+    $version = trim($_POST['version']);
 
-    if (empty($nombre) || $idPaaS <= 0 || $idSO <= 0) {
+    if (empty($nombre) || $idPaaS <= 0 || $idSO <= 0 || empty($arquitectura) || empty($version)) {
         $_SESSION['error_message'] = 'Todos los campos son obligatorios.';
     } else {
         $conn->begin_transaction();
@@ -171,15 +173,30 @@ $result_paas = $conn->query($query_paas);
 
             <div class="mb-3">
                 <label for="idSO" class="form-label">Sistema Operativo</label>
-                <select class="form-select" id="idSO" name="idSO" required>
+                <select class="form-select" id="idSO" name="idSO" required onchange="loadArchitecturesVersions(this.value)">
                     <option value="">Seleccione un sistema operativo</option>
                     <?php while ($so = $result_sos->fetch_assoc()): ?>
                         <option value="<?php echo $so['idSO']; ?>">
-                            <?php echo htmlspecialchars($so['Nombre'] . ' ' . $so['Version']); ?>
+                            <?php echo htmlspecialchars($so['Nombre']); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
             </div>
+
+            <div class="mb-3">
+                <label for="arquitectura" class="form-label">Arquitectura</label>
+                <select class="form-select" id="arquitectura" name="arquitectura" required>
+                    <option value="">Seleccione primero un sistema operativo</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="version" class="form-label">Versión</label>
+                <select class="form-select" id="version" name="version" required>
+                    <option value="">Seleccione primero un sistema operativo</option>
+                </select>
+            </div>
+
 
             <div class="text-end">
                 <button type="submit" class="btn btn-primary">Crear PaaS</button>
@@ -201,6 +218,51 @@ $result_paas = $conn->query($query_paas);
             } else {
                 details.style.display = 'none';
             }
+        }
+
+        function loadArchitecturesVersions(idSO) {
+            if (!idSO) {
+                document.getElementById('arquitectura').innerHTML = '<option value="">Seleccione primero un sistema operativo</option>';
+                document.getElementById('version').innerHTML = '<option value="">Seleccione primero un sistema operativo</option>';
+                return;
+            }
+
+            fetch(`get_architectures_versions.php?idSO=${idSO}`)
+                .then(response => response.json())
+                .then(data => {
+                    const arquitecturaSelect = document.getElementById('arquitectura');
+                    const versionSelect = document.getElementById('version');
+
+                    arquitecturaSelect.innerHTML = '';
+                    versionSelect.innerHTML = '';
+
+                    if (data.architectures.length > 0) {
+                        data.architectures.forEach(arch => {
+                            const option = document.createElement('option');
+                            option.value = arch;
+                            option.textContent = arch;
+                            arquitecturaSelect.appendChild(option);
+                        });
+                    } else {
+                        arquitecturaSelect.innerHTML = '<option value="">Sin arquitecturas disponibles</option>';
+                    }
+
+                    if (data.versions.length > 0) {
+                        data.versions.forEach(ver => {
+                            const option = document.createElement('option');
+                            option.value = ver;
+                            option.textContent = ver;
+                            versionSelect.appendChild(option);
+                        });
+                    } else {
+                        versionSelect.innerHTML = '<option value="">Sin versiones disponibles</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar arquitecturas y versiones:', error);
+                    document.getElementById('arquitectura').innerHTML = '<option value="">Error al cargar arquitecturas</option>';
+                    document.getElementById('version').innerHTML = '<option value="">Error al cargar versiones</option>';
+                });
         }
     </script>
 
