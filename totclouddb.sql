@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-12-2024 a las 18:05:23
+-- Tiempo de generación: 12-12-2024 a las 16:42:38
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,6 +20,462 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `totclouddb`
 --
+
+DELIMITER $$
+--
+-- Procedimientos
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `realizar_backup_incremental` ()   BEGIN
+    -- Tabla almacenamiento
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'almacenamiento',
+        'UPDATE',
+        JSON_OBJECT(
+            'idAlmacenamiento', idAlmacenamiento,
+            'Nombre', Nombre,
+            'Tipo', Tipo,
+            'VelocidadLectura', VelocidadLectura,
+            'VelocidadEscritura', VelocidadEscritura,
+            'Capacidad', Capacidad,
+            'PrecioH', PrecioH,
+            'Cantidad', Cantidad
+        )
+    FROM almacenamiento
+    WHERE idAlmacenamiento NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idAlmacenamiento') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'almacenamiento'
+    );
+
+    -- Tabla cpu
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'cpu',
+        'UPDATE',
+        JSON_OBJECT(
+            'idCPU', idCPU,
+            'Nombre', Nombre,
+            'Fabricante', Fabricante,
+            'Arquitectura', Arquitectura,
+            'Nucleos', Nucleos,
+            'Frecuencia', Frecuencia,
+            'PrecioH', PrecioH,
+            'Cantidad', Cantidad
+        )
+    FROM cpu
+    WHERE idCPU NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idCPU') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'cpu'
+    );
+
+    -- Tabla direccionip
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'direccionip',
+        'UPDATE',
+        JSON_OBJECT(
+            'idIp', idIp,
+            'Direccion', Direccion,
+            'PrecioH', PrecioH,
+            'idPaaS', idPaaS
+        )
+    FROM direccionip
+    WHERE idIp NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idIp') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'direccionip'
+    );
+
+    -- Tabla paas
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'paas',
+        'UPDATE',
+        JSON_OBJECT(
+            'idPaaS', idPaaS,
+            'Nombre', Nombre,
+            'Estado', Estado,
+            'idSO', idSO
+        )
+    FROM paas
+    WHERE idPaaS NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idPaaS') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'paas'
+    );
+
+    -- Tabla ram
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'ram',
+        'UPDATE',
+        JSON_OBJECT(
+            'idRAM', idRAM,
+            'Nombre', Nombre,
+            'Fabricante', Fabricante,
+            'Frecuencia', Frecuencia,
+            'Capacidad', Capacidad,
+            'Tipo', Tipo,
+            'PrecioH', PrecioH,
+            'Cantidad', Cantidad
+        )
+    FROM ram
+    WHERE idRAM NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idRAM') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'ram'
+    );
+
+    -- Tabla motor
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'motor',
+        'UPDATE',
+        JSON_OBJECT(
+            'idMotor', idMotor,
+            'Nombre', Nombre,
+            'Version', Version,
+            'PrecioH', PrecioH
+        )
+    FROM motor
+    WHERE idMotor NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idMotor') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'motor'
+    );
+
+    -- Tabla sistemaoperativo
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'sistemaoperativo',
+        'UPDATE',
+        JSON_OBJECT(
+            'idSO', idSO,
+            'Nombre', Nombre,
+            'Arquitectura', Arquitectura,
+            'Version', Version,
+            'Tipo', Tipo,
+            'MinAlmacenamiento', MinAlmacenamiento,
+            'MinRAM', MinRAM,
+            'PrecioH', PrecioH
+        )
+    FROM sistemaoperativo
+    WHERE idSO NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idSO') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'sistemaoperativo'
+    );
+
+    -- Tabla usuario
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'usuario',
+        'UPDATE',
+        JSON_OBJECT(
+            'idUsuario', idUsuario,
+            'Nombre', Nombre,
+            'Usuario', Usuario,
+            'Email', Email,
+            'Telefono', Telefono,
+            'Direccion', Direccion,
+            'FechaRegistro', FechaRegistro
+        )
+    FROM usuario
+    WHERE idUsuario NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idUsuario') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'usuario'
+    );
+
+    -- Tabla organizacion
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'organizacion',
+        'UPDATE',
+        JSON_OBJECT(
+            'idOrganizacion', idOrganizacion,
+            'Nombre', Nombre,
+            'Descripcion', Descripcion,
+            'idCreador', idCreador
+        )
+    FROM organizacion
+    WHERE idOrganizacion NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idOrganizacion') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'organizacion'
+    );
+
+    -- Tabla grupo
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'grupo',
+        'UPDATE',
+        JSON_OBJECT(
+            'idGrupo', idGrupo,
+            'Nombre', Nombre,
+            'Descripcion', Descripcion,
+            'idOrg', idOrg
+        )
+    FROM grupo
+    WHERE idGrupo NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idGrupo') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'grupo'
+    );
+
+    -- Tabla privilegio
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'privilegio',
+        'UPDATE',
+        JSON_OBJECT(
+            'idPrivilegio', idPrivilegio,
+            'Nombre', Nombre,
+            'Descripcion', Descripcion
+        )
+    FROM privilegio
+    WHERE idPrivilegio NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idPrivilegio') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'privilegio'
+    );
+
+    -- Tabla monitorizacion
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'monitorizacion',
+        'UPDATE',
+        JSON_OBJECT(
+            'idMonitorizacion', idMonitorizacion,
+            'TipoEvento', TipoEvento,
+            'Descripcion', Descripcion,
+            'Fecha', Fecha,
+            'Hora', Hora,
+            'idPaaS', idPaaS,
+            'idSaaS', idSaaS
+        )
+    FROM monitorizacion
+    WHERE idMonitorizacion NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idMonitorizacion') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'monitorizacion'
+    );
+
+    -- Tabla trabajador
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'trabajador',
+        'UPDATE',
+        JSON_OBJECT(
+            'idTrabajador', idTrabajador,
+            'idUsuario', idUsuario
+        )
+    FROM trabajador
+    WHERE idTrabajador NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idTrabajador') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'trabajador'
+    );
+
+    -- Tabla r_grup_priv
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_grup_priv',
+        'UPDATE',
+        JSON_OBJECT(
+            'idGrup', idGrup,
+            'idPriv', idPriv
+        )
+    FROM r_grup_priv
+    WHERE idGrup NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idGrup') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_grup_priv'
+    );
+
+    -- Tabla r_paas_almacenamiento
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_paas_almacenamiento',
+        'UPDATE',
+        JSON_OBJECT(
+            'idPaaS', idPaaS,
+            'idAlmacenamiento', idAlmacenamiento,
+            'Cantidad', Cantidad
+        )
+    FROM r_paas_almacenamiento
+    WHERE idPaaS NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idPaaS') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_paas_almacenamiento'
+    );
+
+    -- Tabla r_paas_cpu
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_paas_cpu',
+        'UPDATE',
+        JSON_OBJECT(
+            'idPaaS', idPaaS,
+            'idCPU', idCPU,
+            'Cantidad', Cantidad
+        )
+    FROM r_paas_cpu
+    WHERE idPaaS NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idPaaS') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_paas_cpu'
+    );
+
+    -- Tabla r_paas_grup
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_paas_grup',
+        'UPDATE',
+        JSON_OBJECT(
+            'idPaaS', idPaaS,
+            'idGrup', idGrup
+        )
+    FROM r_paas_grup
+    WHERE idPaaS NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idPaaS') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_paas_grup'
+    );
+
+    -- Tabla r_paas_ram
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_paas_ram',
+        'UPDATE',
+        JSON_OBJECT(
+            'idPaaS', idPaaS,
+            'idRAM', idRAM,
+            'Cantidad', Cantidad
+        )
+    FROM r_paas_ram
+    WHERE idPaaS NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idPaaS') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_paas_ram'
+    );
+
+    -- Tabla r_saas_grup
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_saas_grup',
+        'UPDATE',
+        JSON_OBJECT(
+            'idSaaS', idSaaS,
+            'idGrup', idGrup
+        )
+    FROM r_saas_grup
+    WHERE idSaaS NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idSaaS') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_saas_grup'
+    );
+
+    -- Tabla r_usuario_grupo
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_usuario_grupo',
+        'UPDATE',
+        JSON_OBJECT(
+            'idUsuario', idUsuario,
+            'idGrupo', idGrupo
+        )
+    FROM r_usuario_grupo
+    WHERE idUsuario NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idUsuario') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_usuario_grupo'
+    );
+
+    -- Tabla r_usuario_org
+    INSERT INTO backup (Fecha, Hora, Tipo, Tabla, Accion, Datos)
+    SELECT 
+        CURDATE(),
+        CURTIME(),
+        'Incremental',
+        'r_usuario_org',
+        'UPDATE',
+        JSON_OBJECT(
+            'idUsuario', idUsuario,
+            'idOrg', idOrg
+        )
+    FROM r_usuario_org
+    WHERE idUsuario NOT IN (
+        SELECT JSON_EXTRACT(Datos, '$.idUsuario') 
+        FROM backup 
+        WHERE Fecha = CURDATE() AND Tabla = 'r_usuario_org'
+    );
+
+END$$
+
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -59,10 +515,91 @@ CREATE TABLE `backup` (
   `Fecha` date NOT NULL,
   `Hora` time NOT NULL,
   `Tipo` varchar(50) NOT NULL,
-  `Datos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`Datos`)),
-  `idSaaS` int(11) DEFAULT NULL,
-  `idPaaS` int(11) DEFAULT NULL
+  `Tabla` varchar(100) NOT NULL,
+  `Accion` varchar(50) NOT NULL,
+  `Datos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`Datos`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `backup`
+--
+
+INSERT INTO `backup` (`idBackup`, `Fecha`, `Hora`, `Tipo`, `Tabla`, `Accion`, `Datos`) VALUES
+(51, '2024-12-12', '16:38:39', 'Incremental', 'almacenamiento', 'UPDATE', '{\"idAlmacenamiento\": 1, \"Nombre\": \"Samsung 970 EVO Plus\", \"Tipo\": \"SSD\", \"VelocidadLectura\": 3500.00, \"VelocidadEscritura\": 3300.00, \"Capacidad\": 1000.00, \"PrecioH\": 0.20, \"Cantidad\": 0}'),
+(52, '2024-12-12', '16:38:39', 'Incremental', 'almacenamiento', 'UPDATE', '{\"idAlmacenamiento\": 2, \"Nombre\": \"Seagate Barracuda\", \"Tipo\": \"HDD\", \"VelocidadLectura\": 150.00, \"VelocidadEscritura\": 140.00, \"Capacidad\": 2000.00, \"PrecioH\": 0.10, \"Cantidad\": 53}'),
+(53, '2024-12-12', '16:38:39', 'Incremental', 'almacenamiento', 'UPDATE', '{\"idAlmacenamiento\": 3, \"Nombre\": \"Western Digital Blue SN570\", \"Tipo\": \"NVMe\", \"VelocidadLectura\": 3500.00, \"VelocidadEscritura\": 3000.00, \"Capacidad\": 512.00, \"PrecioH\": 0.25, \"Cantidad\": 15}'),
+(54, '2024-12-12', '16:38:39', 'Incremental', 'almacenamiento', 'UPDATE', '{\"idAlmacenamiento\": 4, \"Nombre\": \"Kingston A400\", \"Tipo\": \"SATA\", \"VelocidadLectura\": 500.00, \"VelocidadEscritura\": 450.00, \"Capacidad\": 256.00, \"PrecioH\": 0.05, \"Cantidad\": 40}'),
+(58, '2024-12-12', '16:38:39', 'Incremental', 'cpu', 'UPDATE', '{\"idCPU\": 1, \"Nombre\": \"Intel Core i5-11600K\", \"Fabricante\": \"Intel\", \"Arquitectura\": \"x86-64\", \"Nucleos\": 6, \"Frecuencia\": 3.90, \"PrecioH\": 0.25, \"Cantidad\": 0}'),
+(59, '2024-12-12', '16:38:39', 'Incremental', 'cpu', 'UPDATE', '{\"idCPU\": 2, \"Nombre\": \"AMD Ryzen 7 5800X\", \"Fabricante\": \"AMD\", \"Arquitectura\": \"x86-64\", \"Nucleos\": 8, \"Frecuencia\": 3.80, \"PrecioH\": 0.30, \"Cantidad\": 0}'),
+(60, '2024-12-12', '16:38:39', 'Incremental', 'cpu', 'UPDATE', '{\"idCPU\": 3, \"Nombre\": \"Intel Core i9-12900K\", \"Fabricante\": \"Intel\", \"Arquitectura\": \"x86-64\", \"Nucleos\": 16, \"Frecuencia\": 3.20, \"PrecioH\": 0.50, \"Cantidad\": 10}'),
+(61, '2024-12-12', '16:38:39', 'Incremental', 'cpu', 'UPDATE', '{\"idCPU\": 4, \"Nombre\": \"AMD Ryzen Threadripper 3990X\", \"Fabricante\": \"AMD\", \"Arquitectura\": \"x86-64\", \"Nucleos\": 64, \"Frecuencia\": 2.90, \"PrecioH\": 1.00, \"Cantidad\": 5}'),
+(62, '2024-12-12', '16:38:39', 'Incremental', 'cpu', 'UPDATE', '{\"idCPU\": 5, \"Nombre\": \"Intel Xeon Gold 6258R\", \"Fabricante\": \"Intel\", \"Arquitectura\": \"x86-64\", \"Nucleos\": 28, \"Frecuencia\": 3.00, \"PrecioH\": 0.75, \"Cantidad\": 8}'),
+(63, '2024-12-12', '16:38:39', 'Incremental', 'cpu', 'UPDATE', '{\"idCPU\": 6, \"Nombre\": \"AMD EPYC 7763\", \"Fabricante\": \"AMD\", \"Arquitectura\": \"x86-64\", \"Nucleos\": 64, \"Frecuencia\": 2.45, \"PrecioH\": 0.90, \"Cantidad\": 6}'),
+(65, '2024-12-12', '16:38:39', 'Incremental', 'direccionip', 'UPDATE', '{\"idIp\": 1, \"Direccion\": \"192.8.9.1\", \"PrecioH\": 0.10, \"idPaaS\": null}'),
+(66, '2024-12-12', '16:38:39', 'Incremental', 'direccionip', 'UPDATE', '{\"idIp\": 2, \"Direccion\": \"192.8.9.2\", \"PrecioH\": 0.10, \"idPaaS\": null}'),
+(68, '2024-12-12', '16:38:39', 'Incremental', 'paas', 'UPDATE', '{\"idPaaS\": 1, \"Nombre\": \"PaaS1\", \"Estado\": \"Activo\", \"idSO\": 1}'),
+(69, '2024-12-12', '16:38:39', 'Incremental', 'ram', 'UPDATE', '{\"idRAM\": 1, \"Nombre\": \"Kingston DDR4\", \"Fabricante\": \"Kingston\", \"Frecuencia\": 3200.00, \"Capacidad\": 16.00, \"Tipo\": \"DDR4\", \"PrecioH\": 0.10, \"Cantidad\": 48}'),
+(70, '2024-12-12', '16:38:39', 'Incremental', 'ram', 'UPDATE', '{\"idRAM\": 2, \"Nombre\": \"Corsair Vengeance LPX\", \"Fabricante\": \"Corsair\", \"Frecuencia\": 3600.00, \"Capacidad\": 32.00, \"Tipo\": \"DDR4\", \"PrecioH\": 0.15, \"Cantidad\": 29}'),
+(71, '2024-12-12', '16:38:39', 'Incremental', 'ram', 'UPDATE', '{\"idRAM\": 3, \"Nombre\": \"HyperX Fury DDR5\", \"Fabricante\": \"HyperX\", \"Frecuencia\": 4800.00, \"Capacidad\": 16.00, \"Tipo\": \"DDR5\", \"PrecioH\": 0.20, \"Cantidad\": 20}'),
+(72, '2024-12-12', '16:38:39', 'Incremental', 'ram', 'UPDATE', '{\"idRAM\": 4, \"Nombre\": \"G.Skill Trident Z\", \"Fabricante\": \"G.Skill\", \"Frecuencia\": 3200.00, \"Capacidad\": 64.00, \"Tipo\": \"DDR4\", \"PrecioH\": 0.25, \"Cantidad\": 10}'),
+(76, '2024-12-12', '16:38:39', 'Incremental', 'motor', 'UPDATE', '{\"idMotor\": 1, \"Nombre\": \"SaaSNumero1\", \"Version\": \"125\", \"PrecioH\": 0.39}'),
+(77, '2024-12-12', '16:38:39', 'Incremental', 'motor', 'UPDATE', '{\"idMotor\": 2, \"Nombre\": \"SaaSNumero2\", \"Version\": \"1232\", \"PrecioH\": 0.34}'),
+(78, '2024-12-12', '16:38:39', 'Incremental', 'motor', 'UPDATE', '{\"idMotor\": 3, \"Nombre\": \"SaaSNumero3\", \"Version\": \"125\", \"PrecioH\": 1.11}'),
+(79, '2024-12-12', '16:38:39', 'Incremental', 'sistemaoperativo', 'UPDATE', '{\"idSO\": 1, \"Nombre\": \"Ubuntu\", \"Arquitectura\": \"x64\", \"Version\": \"22.04\", \"Tipo\": \"Linux\", \"MinAlmacenamiento\": 20.00, \"MinRAM\": 2.00, \"PrecioH\": 0.10}'),
+(80, '2024-12-12', '16:38:39', 'Incremental', 'sistemaoperativo', 'UPDATE', '{\"idSO\": 2, \"Nombre\": \"Windows Server 2022\", \"Arquitectura\": \"x64\", \"Version\": \"21H2\", \"Tipo\": \"Windows\", \"MinAlmacenamiento\": 50.00, \"MinRAM\": 8.00, \"PrecioH\": 0.50}'),
+(81, '2024-12-12', '16:38:39', 'Incremental', 'sistemaoperativo', 'UPDATE', '{\"idSO\": 3, \"Nombre\": \"Debian\", \"Arquitectura\": \"x64\", \"Version\": \"11\", \"Tipo\": \"Linux\", \"MinAlmacenamiento\": 25.00, \"MinRAM\": 2.00, \"PrecioH\": 0.08}'),
+(82, '2024-12-12', '16:38:39', 'Incremental', 'sistemaoperativo', 'UPDATE', '{\"idSO\": 4, \"Nombre\": \"CentOS\", \"Arquitectura\": \"x64\", \"Version\": \"7\", \"Tipo\": \"Linux\", \"MinAlmacenamiento\": 30.00, \"MinRAM\": 4.00, \"PrecioH\": 0.15}'),
+(83, '2024-12-12', '16:38:39', 'Incremental', 'sistemaoperativo', 'UPDATE', '{\"idSO\": 5, \"Nombre\": \"Red Hat Enterprise Linux\", \"Arquitectura\": \"x64\", \"Version\": \"8\", \"Tipo\": \"Linux\", \"MinAlmacenamiento\": 30.00, \"MinRAM\": 4.00, \"PrecioH\": 0.20}'),
+(84, '2024-12-12', '16:38:39', 'Incremental', 'sistemaoperativo', 'UPDATE', '{\"idSO\": 6, \"Nombre\": \"Windows Server 2016\", \"Arquitectura\": \"x64\", \"Version\": \"1607\", \"Tipo\": \"Windows\", \"MinAlmacenamiento\": 40.00, \"MinRAM\": 4.00, \"PrecioH\": 0.40}'),
+(86, '2024-12-12', '16:38:39', 'Incremental', 'usuario', 'UPDATE', '{\"idUsuario\": 0, \"Nombre\": \"Xisco Gaya\", \"Usuario\": \"xiiscogaya\", \"Email\": \"xiiscogaya@hotmail.com\", \"Telefono\": \"62378348\", \"Direccion\": \"C de bunyola, 6\", \"FechaRegistro\": \"2024-12-08 19:56:33\"}'),
+(87, '2024-12-12', '16:38:39', 'Incremental', 'usuario', 'UPDATE', '{\"idUsuario\": 1, \"Nombre\": \"Toni\", \"Usuario\": \"tonii100\", \"Email\": \"toni100@hotmail.com\", \"Telefono\": \"3784848983\", \"Direccion\": \"Avinguda des Tren 20\", \"FechaRegistro\": \"2024-12-09 21:21:32\"}'),
+(89, '2024-12-12', '16:38:39', 'Incremental', 'organizacion', 'UPDATE', '{\"idOrganizacion\": 3, \"Nombre\": \"Confi1\", \"Descripcion\": \"hola\", \"idCreador\": 0}'),
+(90, '2024-12-12', '16:38:39', 'Incremental', 'organizacion', 'UPDATE', '{\"idOrganizacion\": 4, \"Nombre\": \"OrgaToni\", \"Descripcion\": \"Creada por Tonii100\", \"idCreador\": 1}'),
+(91, '2024-12-12', '16:38:39', 'Incremental', 'organizacion', 'UPDATE', '{\"idOrganizacion\": 5, \"Nombre\": \"Rizem\", \"Descripcion\": \"Grupo\", \"idCreador\": 0}'),
+(92, '2024-12-12', '16:38:39', 'Incremental', 'grupo', 'UPDATE', '{\"idGrupo\": 3, \"Nombre\": \"admin\", \"Descripcion\": \"Grupo con todos los permisos\", \"idOrg\": 4}'),
+(93, '2024-12-12', '16:38:39', 'Incremental', 'grupo', 'UPDATE', '{\"idGrupo\": 4, \"Nombre\": \"admin\", \"Descripcion\": \"Grupo con todos los permisos\", \"idOrg\": 5}'),
+(94, '2024-12-12', '16:38:39', 'Incremental', 'grupo', 'UPDATE', '{\"idGrupo\": 5, \"Nombre\": \"hola\", \"Descripcion\": \"hola\", \"idOrg\": 5}'),
+(95, '2024-12-12', '16:38:39', 'Incremental', 'grupo', 'UPDATE', '{\"idGrupo\": 6, \"Nombre\": \"Confi1\", \"Descripcion\": \"ne\", \"idOrg\": 5}'),
+(99, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 1, \"Nombre\": \"Contratar paas\", \"Descripcion\": \"Permite al usuario contratar nuevos servicios PaaS\"}'),
+(100, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 2, \"Nombre\": \"Contratar saas\", \"Descripcion\": \"Permite al usuario contratar nuevos servicios SaaS\"}'),
+(101, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 3, \"Nombre\": \"Modificar paas\", \"Descripcion\": \"Permite al usuario modificar los servicios PaaS contratados\"}'),
+(102, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 4, \"Nombre\": \"Modificar saas\", \"Descripcion\": \"Permite al usuario modificar los servicios SaaS contratados\"}'),
+(103, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 5, \"Nombre\": \"Eliminar paas\", \"Descripcion\": \"Permite al usuario eliminar servicios PaaS contratados\"}'),
+(104, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 6, \"Nombre\": \"Eliminar saas\", \"Descripcion\": \"Permite al usuario eliminar servicios SaaS contratados\"}'),
+(105, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 7, \"Nombre\": \"Añadir usuarios\", \"Descripcion\": \"Permite al usuario añadir usuarios a la organización\"}'),
+(106, '2024-12-12', '16:38:39', 'Incremental', 'privilegio', 'UPDATE', '{\"idPrivilegio\": 8, \"Nombre\": \"Gestionar grupos\", \"Descripcion\": \"Permite al usuario gestionar y modificar los grupos de la organización\"}'),
+(114, '2024-12-12', '16:38:39', 'Incremental', 'trabajador', 'UPDATE', '{\"idTrabajador\": 0, \"idUsuario\": 0}'),
+(115, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 1}'),
+(116, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 2}'),
+(117, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 3}'),
+(118, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 4}'),
+(119, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 5}'),
+(120, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 6}'),
+(121, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 7}'),
+(122, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 3, \"idPriv\": 8}'),
+(123, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 1}'),
+(124, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 2}'),
+(125, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 3}'),
+(126, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 4}'),
+(127, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 5}'),
+(128, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 6}'),
+(129, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 7}'),
+(130, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 4, \"idPriv\": 8}'),
+(131, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 5, \"idPriv\": 3}'),
+(132, '2024-12-12', '16:38:39', 'Incremental', 'r_grup_priv', 'UPDATE', '{\"idGrup\": 5, \"idPriv\": 4}'),
+(146, '2024-12-12', '16:38:39', 'Incremental', 'r_paas_almacenamiento', 'UPDATE', '{\"idPaaS\": 1, \"idAlmacenamiento\": 1, \"Cantidad\": 4}'),
+(147, '2024-12-12', '16:38:39', 'Incremental', 'r_paas_cpu', 'UPDATE', '{\"idPaaS\": 1, \"idCPU\": 2, \"Cantidad\": 20}'),
+(148, '2024-12-12', '16:38:39', 'Incremental', 'r_paas_grup', 'UPDATE', '{\"idPaaS\": 1, \"idGrup\": 4}'),
+(149, '2024-12-12', '16:38:39', 'Incremental', 'r_paas_ram', 'UPDATE', '{\"idPaaS\": 1, \"idRAM\": 1, \"Cantidad\": 2}'),
+(150, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_grupo', 'UPDATE', '{\"idUsuario\": 0, \"idGrupo\": 4}'),
+(151, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_grupo', 'UPDATE', '{\"idUsuario\": 0, \"idGrupo\": 5}'),
+(152, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_grupo', 'UPDATE', '{\"idUsuario\": 1, \"idGrupo\": 3}'),
+(153, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_grupo', 'UPDATE', '{\"idUsuario\": 1, \"idGrupo\": 5}'),
+(154, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_grupo', 'UPDATE', '{\"idUsuario\": 1, \"idGrupo\": 6}'),
+(157, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_org', 'UPDATE', '{\"idUsuario\": 0, \"idOrg\": 5}'),
+(158, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_org', 'UPDATE', '{\"idUsuario\": 1, \"idOrg\": 3}'),
+(159, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_org', 'UPDATE', '{\"idUsuario\": 1, \"idOrg\": 4}'),
+(160, '2024-12-12', '16:38:39', 'Incremental', 'r_usuario_org', 'UPDATE', '{\"idUsuario\": 1, \"idOrg\": 5}');
 
 -- --------------------------------------------------------
 
@@ -536,8 +1073,7 @@ ALTER TABLE `almacenamiento`
 --
 ALTER TABLE `backup`
   ADD PRIMARY KEY (`idBackup`),
-  ADD KEY `idSaaS` (`idSaaS`),
-  ADD KEY `idPaaS` (`idPaaS`);
+  ADD KEY `idx_fecha_tabla` (`Fecha`,`Tabla`);
 
 --
 -- Indices de la tabla `cpu`
@@ -685,15 +1221,18 @@ ALTER TABLE `usuario`
   ADD UNIQUE KEY `Email` (`Email`);
 
 --
--- Restricciones para tablas volcadas
+-- AUTO_INCREMENT de las tablas volcadas
 --
 
 --
--- Filtros para la tabla `backup`
+-- AUTO_INCREMENT de la tabla `backup`
 --
 ALTER TABLE `backup`
-  ADD CONSTRAINT `backup_ibfk_1` FOREIGN KEY (`idSaaS`) REFERENCES `saas` (`idSaaS`) ON DELETE CASCADE,
-  ADD CONSTRAINT `backup_ibfk_2` FOREIGN KEY (`idPaaS`) REFERENCES `paas` (`idPaaS`) ON DELETE CASCADE;
+  MODIFY `idBackup` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=164;
+
+--
+-- Restricciones para tablas volcadas
+--
 
 --
 -- Filtros para la tabla `direccionip`
@@ -794,6 +1333,14 @@ ALTER TABLE `saas`
 --
 ALTER TABLE `trabajador`
   ADD CONSTRAINT `trabajador_ibfk_1` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE;
+
+DELIMITER $$
+--
+-- Eventos
+--
+CREATE DEFINER=`root`@`localhost` EVENT `backup_incremental_event` ON SCHEDULE EVERY 1 DAY STARTS '2024-12-12 16:39:26' ON COMPLETION NOT PRESERVE ENABLE DO CALL realizar_backup_incremental()$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
