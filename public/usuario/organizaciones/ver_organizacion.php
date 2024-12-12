@@ -57,27 +57,31 @@ while ($privilege = $result_privileges->fetch_assoc()) {
 
 // Obtener lista de SaaS asociados
 $query_saas = "
-    SELECT s.* 
+    SELECT DISTINCT s.*
     FROM saas s
     JOIN r_saas_grup rsg ON s.idSaaS = rsg.idSaaS
     JOIN grupo g ON rsg.idGrup = g.idGrupo
-    WHERE g.idOrg = ?";
+    JOIN r_usuario_grupo rug ON rug.idGrupo = g.idGrupo
+    WHERE g.idOrg = ? AND rug.idUsuario = ?";
 $stmt_saas = $conn->prepare($query_saas);
-$stmt_saas->bind_param('i', $idOrganizacion);
+$stmt_saas->bind_param('ii', $idOrganizacion, $user_id);
 $stmt_saas->execute();
 $result_saas = $stmt_saas->get_result();
 
+
 // Obtener lista de PaaS asociados
 $query_paas = "
-    SELECT p.* 
-    FROM paas p 
+    SELECT DISTINCT p.* 
+    FROM paas p
     JOIN r_paas_grup rpg ON p.idPaaS = rpg.idPaaS
     JOIN grupo g ON rpg.idGrup = g.idGrupo
-    WHERE g.idOrg = ?";
+    JOIN r_usuario_grupo rug ON rug.idGrupo = g.idGrupo
+    WHERE g.idOrg = ? AND rug.idUsuario = ?";
 $stmt_paas = $conn->prepare($query_paas);
-$stmt_paas->bind_param('i', $idOrganizacion);
+$stmt_paas->bind_param('ii', $idOrganizacion, $user_id);
 $stmt_paas->execute();
 $result_paas = $stmt_paas->get_result();
+
 ?>
 
 <!DOCTYPE html>

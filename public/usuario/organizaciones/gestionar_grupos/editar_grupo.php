@@ -2,13 +2,12 @@
 session_start();
 include '../../../../includes/db_connect.php'; // Conexión a la base de datos
 
-// Verificar si el usuario ha iniciado sesión
+// Validación inicial
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../../login.php');
     exit;
 }
 
-// Verificar si se ha proporcionado un ID de grupo y organización
 if (!isset($_GET['idGrupo']) || !isset($_GET['idOrg']) || empty($_GET['idGrupo']) || empty($_GET['idOrg'])) {
     $_SESSION['error_message'] = 'No se ha especificado el grupo u organización.';
     header('Location: ../ver_organizacion.php');
@@ -19,7 +18,7 @@ $idGrupo = intval($_GET['idGrupo']);
 $idOrganizacion = intval($_GET['idOrg']);
 $user_id = $_SESSION['user_id'];
 
-// Verificar que el usuario tiene acceso a esta organización
+// Verificar acceso del usuario a la organización
 $query_check = "SELECT * FROM r_usuario_org WHERE idUsuario = ? AND idOrg = ?";
 $stmt_check = $conn->prepare($query_check);
 $stmt_check->bind_param('ii', $user_id, $idOrganizacion);
@@ -46,7 +45,7 @@ if (!$group) {
     exit;
 }
 
-// Obtener privilegios asociados al grupo
+// Obtener privilegios del grupo
 $query_privileges_group = "SELECT idPriv FROM r_grup_priv WHERE idGrup = ?";
 $stmt_privileges_group = $conn->prepare($query_privileges_group);
 $stmt_privileges_group->bind_param('i', $idGrupo);
@@ -58,61 +57,93 @@ while ($priv = $result_privileges_group->fetch_assoc()) {
     $privileges_group[] = $priv['idPriv'];
 }
 
-// Obtener todos los privilegios disponibles, excluyendo los de contratar PaaS y SaaS
+// Obtener todos los privilegios disponibles
 $query_all_privileges = "
     SELECT * FROM privilegio 
     WHERE Nombre NOT IN ('Contratar paas', 'Contratar saas')";
 $result_all_privileges = $conn->query($query_all_privileges);
 
-// Obtener los SaaS asociados al grupo
+// Obtener SaaS disponibles del grupo admin
+$query_admin_saas = "
+    SELECT s.idSaaS, s.Nombre AS SaaS, p.idPaaS, p.Nombre AS PaaS
+    FROM saas s
+    JOIN paas p ON s.idPaaS = p.idPaaS
+    JOIN r_saas_grup rsg ON rsg.idSaaS = s.idSaaS
+    JOIN grupo g ON rsg.idGrup = g.idGrupo
+    WHERE g.idOrg = ? AND g.Nombre = 'admin'";
+$stmt_admin_saas = $conn->prepare($query_admin_saas);
+$stmt_admin_saas->bind_param('i', $idOrganizacion);
+$stmt_admin_saas->execute();
+$result_saas = $stmt_admin_saas->get_result();
+
+// Obtener PaaS disponibles del grupo admin
+$query_admin_paas = "
+    SELECT p.idPaaS, p.Nombre
+    FROM paas p
+    JOIN r_paas_grup rpg ON p.idPaaS = rpg.idPaaS
+    JOIN grupo g ON rpg.idGrup = g.idGrupo
+    WHERE g.idOrg = ? AND g.Nombre = 'admin'";
+$stmt_admin_paas = $conn->prepare($query_admin_paas);
+$stmt_admin_paas->bind_param('i', $idOrganizacion);
+$stmt_admin_paas->execute();
+$result_paas = $stmt_admin_paas->get_result();
+
+// Obtener SaaS y PaaS vinculados al grupo actual
 $query_saas_group = "SELECT idSaaS FROM r_saas_grup WHERE idGrup = ?";
 $stmt_saas_group = $conn->prepare($query_saas_group);
 $stmt_saas_group->bind_param('i', $idGrupo);
 $stmt_saas_group->execute();
 $result_saas_group = $stmt_saas_group->get_result();
+$saas_group = array_column($result_saas_group->fetch_all(MYSQLI_ASSOC), 'idSaaS');
 
-$saas_group = [];
-while ($saas = $result_saas_group->fetch_assoc()) {
-    $saas_group[] = $saas['idSaaS'];
-}
-
-// Obtener los PaaS asociados al grupo
 $query_paas_group = "SELECT idPaaS FROM r_paas_grup WHERE idGrup = ?";
 $stmt_paas_group = $conn->prepare($query_paas_group);
 $stmt_paas_group->bind_param('i', $idGrupo);
 $stmt_paas_group->execute();
 $result_paas_group = $stmt_paas_group->get_result();
+$paas_group = array_column($result_paas_group->fetch_all(MYSQLI_ASSOC), 'idPaaS');
 
-$paas_group = [];
-while ($paas = $result_paas_group->fetch_assoc()) {
-    $paas_group[] = $paas['idPaaS'];
+
+// Manejo de actualización
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'editar') {
+    $selected_saas = $_POST['saas'] ?? [];
+    $selected_paas = $_POST['paas'] ?? [];
+
+    $conn->begin_transaction();
+
+    try {
+        // Actualizar SaaS
+        $conn->query("DELETE FROM r_saas_grup WHERE idGrup = $idGrupo");
+        foreach ($selected_saas as $idSaaS) {
+            $conn->query("INSERT INTO r_saas_grup (idSaaS, idGrup) VALUES ($idSaaS, $idGrupo)");
+
+            // Insertar PaaS vinculado al SaaS seleccionado
+            $result_paas_linked = $conn->query("SELECT idPaaS FROM saas WHERE idSaaS = $idSaaS");
+            while ($row = $result_paas_linked->fetch_assoc()) {
+                $conn->query("INSERT IGNORE INTO r_paas_grup (idPaaS, idGrup) VALUES ({$row['idPaaS']}, $idGrupo)");
+            }
+        }
+
+        // Actualizar PaaS
+        $conn->query("DELETE FROM r_paas_grup WHERE idGrup = $idGrupo");
+        foreach ($selected_paas as $idPaaS) {
+            $conn->query("INSERT INTO r_paas_grup (idPaaS, idGrup) VALUES ($idPaaS, $idGrupo)");
+        }
+
+        $conn->commit();
+        $_SESSION['success_message'] = 'Grupo actualizado correctamente.';
+    } catch (Exception $e) {
+        $conn->rollback();
+        $_SESSION['error_message'] = 'Error al actualizar el grupo: ' . $e->getMessage();
+    }
+
+    header('Location: gestionar_grupos.php?idOrg=' . $idOrganizacion);
+    exit;
 }
-
-// Obtener los SaaS disponibles en la organización
-$query_saas = "
-    SELECT s.idSaaS, s.Nombre AS SaaS, p.idPaaS, p.Nombre AS PaaS
-    FROM saas s
-    JOIN paas p ON s.idPaaS = p.idPaaS
-    JOIN r_saas_grup rsg ON s.idSaaS = rsg.idSaaS
-    JOIN grupo g ON rsg.idGrup = g.idGrupo
-    WHERE g.idOrg = ? AND g.Nombre = 'admin'";
-$stmt_saas = $conn->prepare($query_saas);
-$stmt_saas->bind_param('i', $idOrganizacion);
-$stmt_saas->execute();
-$result_saas = $stmt_saas->get_result();
-
-// Obtener los PaaS disponibles en la organización
-$query_paas = "
-    SELECT p.idPaaS, p.Nombre
-    FROM paas p
-    JOIN r_paas_grup rpg ON p.idPaaS = rpg.idPaaS
-    JOIN grupo g ON rpg.idGrup = g.idGrupo
-    WHERE g.idOrg = ?";
-$stmt_paas = $conn->prepare($query_paas);
-$stmt_paas->bind_param('i', $idOrganizacion);
-$stmt_paas->execute();
-$result_paas = $stmt_paas->get_result();
 ?>
+
+
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -288,6 +319,6 @@ $result_paas = $stmt_paas->get_result();
             });
         });
 
-    </script>
+        </script>
 </body>
 </html>
