@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idPaaS'], $_POST['est
                                             name="estado" 
                                             value="Disponible" 
                                             onchange="this.form.submit()"
-                                            <?php echo $row['Estado'] === 'Disponible' ? 'checked' : ''; ?>
+                                            <?php echo $row['Estado'] !== 'En pruebas' ? 'checked' : ''; ?>
                                         >
                                     </label>
                                     <span class="slider-label">Disponible</span>
