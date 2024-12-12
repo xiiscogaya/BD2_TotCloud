@@ -162,7 +162,7 @@ $result_paas = $stmt_paas->get_result();
                             <td><?php echo htmlspecialchars($paas['Estado']); ?></td>
                             <td>
                                 <?php if (in_array('Modificar paas', $privileges)): ?>
-                                    <a href="modificar_paas.php?id=<?php echo $paas['idPaaS']; ?>"
+                                    <a href="editar_paas.php?id=<?php echo $paas['idPaaS']; ?>"
                                         class="btn btn-warning btn-sm">Editar</a>
                                 <?php endif; ?>
                                 <?php if (in_array('Eliminar paas', $privileges)): ?>
@@ -231,7 +231,7 @@ $result_paas = $stmt_paas->get_result();
                             <td><?php echo htmlspecialchars($saas['Usuario']); ?></td>
                             <td>
                                 <?php if (in_array('Modificar saas', $privileges)): ?>
-                                    <a href="modificar_saas.php?id=<?php echo $saas['idSaaS']; ?>"
+                                    <a href="editar_saas.php?id=<?php echo $saas['idSaaS']; ?>"
                                         class="btn btn-warning btn-sm">Editar</a>
                                 <?php endif; ?>
                                 <?php if (in_array('Eliminar saas', $privileges)): ?>

@@ -108,26 +108,68 @@ $paas_group = array_column($result_paas_group->fetch_all(MYSQLI_ASSOC), 'idPaaS'
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'editar') {
     $selected_saas = $_POST['saas'] ?? [];
     $selected_paas = $_POST['paas'] ?? [];
+    $selected_privileges = $_POST['privilegios'] ?? [];
 
     $conn->begin_transaction();
 
     try {
-        // Actualizar SaaS
-        $conn->query("DELETE FROM r_saas_grup WHERE idGrup = $idGrupo");
-        foreach ($selected_saas as $idSaaS) {
-            $conn->query("INSERT INTO r_saas_grup (idSaaS, idGrup) VALUES ($idSaaS, $idGrupo)");
+        // Eliminar privilegios actuales del grupo
+        $delete_privileges = $conn->prepare("DELETE FROM r_grup_priv WHERE idGrup = ?");
+        $delete_privileges->bind_param('i', $idGrupo);
+        $delete_privileges->execute();
 
-            // Insertar PaaS vinculado al SaaS seleccionado
-            $result_paas_linked = $conn->query("SELECT idPaaS FROM saas WHERE idSaaS = $idSaaS");
+        // Insertar nuevos privilegios seleccionados
+        $insert_privileges = $conn->prepare("INSERT INTO r_grup_priv (idGrup, idPriv) VALUES (?, ?)");
+        foreach ($selected_privileges as $idPriv) {
+            $insert_privileges->bind_param('ii', $idGrupo, $idPriv);
+            $insert_privileges->execute();
+        }
+
+        // Borrar los SaaS y PaaS actuales vinculados al grupo
+        $conn->query("DELETE FROM r_saas_grup WHERE idGrup = $idGrupo");
+        $conn->query("DELETE FROM r_paas_grup WHERE idGrup = $idGrupo");
+
+        // Procesar los SaaS seleccionados
+        foreach ($selected_saas as $idSaaS) {
+            // Insertar el SaaS en r_saas_grup
+            $stmt = $conn->prepare("INSERT INTO r_saas_grup (idSaaS, idGrup) VALUES (?, ?)");
+            $stmt->bind_param('ii', $idSaaS, $idGrupo);
+            $stmt->execute();
+
+            // Buscar el PaaS vinculado al SaaS
+            $stmt_paas = $conn->prepare("SELECT idPaaS FROM saas WHERE idSaaS = ?");
+            $stmt_paas->bind_param('i', $idSaaS);
+            $stmt_paas->execute();
+            $result_paas_linked = $stmt_paas->get_result();
+
+            // Insertar el PaaS vinculado si no existe
             while ($row = $result_paas_linked->fetch_assoc()) {
-                $conn->query("INSERT IGNORE INTO r_paas_grup (idPaaS, idGrup) VALUES ({$row['idPaaS']}, $idGrupo)");
+                $idPaaS = $row['idPaaS'];
+                $stmt_check = $conn->prepare("SELECT COUNT(*) as count FROM r_paas_grup WHERE idPaaS = ? AND idGrup = ?");
+                $stmt_check->bind_param('ii', $idPaaS, $idGrupo);
+                $stmt_check->execute();
+                $result_check = $stmt_check->get_result()->fetch_assoc();
+
+                if ($result_check['count'] == 0) {
+                    $stmt_paas_insert = $conn->prepare("INSERT INTO r_paas_grup (idPaaS, idGrup) VALUES (?, ?)");
+                    $stmt_paas_insert->bind_param('ii', $idPaaS, $idGrupo);
+                    $stmt_paas_insert->execute();
+                }
             }
         }
 
-        // Actualizar PaaS
-        $conn->query("DELETE FROM r_paas_grup WHERE idGrup = $idGrupo");
+        // Actualizar PaaS seleccionados manualmente
         foreach ($selected_paas as $idPaaS) {
-            $conn->query("INSERT INTO r_paas_grup (idPaaS, idGrup) VALUES ($idPaaS, $idGrupo)");
+            $stmt_check = $conn->prepare("SELECT COUNT(*) as count FROM r_paas_grup WHERE idPaaS = ? AND idGrup = ?");
+            $stmt_check->bind_param('ii', $idPaaS, $idGrupo);
+            $stmt_check->execute();
+            $result_check = $stmt_check->get_result()->fetch_assoc();
+
+            if ($result_check['count'] == 0) {
+                $stmt = $conn->prepare("INSERT INTO r_paas_grup (idPaaS, idGrup) VALUES (?, ?)");
+                $stmt->bind_param('ii', $idPaaS, $idGrupo);
+                $stmt->execute();
+            }
         }
 
         $conn->commit();
