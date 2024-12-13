@@ -87,7 +87,7 @@ $so_result = $conn->query($so_query);
             <a href="../modificar_componentes.php" class="btn btn-secondary">Volver</a>
         </div>
 
-        <!-- Botón para añadir un nuevo Sistema Operativo (se asume que crear_so.php existe) -->
+        <!-- Botón para añadir un nuevo Sistema Operativo-->
         <div class="mb-3 text-end">
             <a href="crear_so.php" class="btn btn-success">Añadir Nuevo Sistema Operativo</a>
         </div>
