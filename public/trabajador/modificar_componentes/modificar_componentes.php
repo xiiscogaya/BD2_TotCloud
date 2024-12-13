@@ -90,6 +90,16 @@ $user = $result->fetch_assoc();
                     </div>
                 </div>
             </div>
+            <!-- Aquí añades la nueva tarjeta para Sistema Operativo -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Modificar Sistema Operativo</h5>
+                        <p class="card-text">Gestiona las opciones de los sistemas operativos disponibles.</p>
+                        <a href="sistemaoperativo/modificar_so.php" class="btn btn-primary">Modificar Sistema Operativo</a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Botón de volver -->
